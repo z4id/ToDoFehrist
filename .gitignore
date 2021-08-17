@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm/JetBrains IDE project configuration directory
+.idea/
+
+# local virtual environment
+env_todofehrist/
