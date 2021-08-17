@@ -23,12 +23,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', None)
-SECRET_KEY = get_random_secret_key() if not SECRET_KEY else SECRET_KEY
+ENVIRONMENT_STAGE = os.environ.get('ENV', None)
+
+if not ENVIRONMENT_STAGE:
+    raise Exception("ENVIRONMENT not set. Check your Environment Variable ENV.")
+if ENVIRONMENT_STAGE not in ['DEV', 'QA', 'UAT', 'PROD']:
+    raise Exception("ENVIRONMENT has Invalid Selection. Check your Environment Variable 'ENV'. "
+                    "Possible Stages: 'DEV' or 'QA' or 'UAT' or 'PROD'")
+
+if ENVIRONMENT_STAGE == "DEV":
+    SECRET_KEY = get_random_secret_key() if not SECRET_KEY else SECRET_KEY
+elif not SECRET_KEY:
+    raise Exception("SECRET_KEY is not set in settings.py. Check your Environment Variable 'SECRET_KEY'")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+if ENVIRONMENT_STAGE == "DEV":
+    DEBUG = True
+    ALLOWED_HOSTS = ['*']
+else:
+    DEBUG = False
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
