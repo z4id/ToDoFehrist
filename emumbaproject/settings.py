@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import enum
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import os
@@ -90,11 +90,63 @@ WSGI_APPLICATION = 'emumbaproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+class SupportedDatabases(enum.Enum):
+    sqlite = 'sqlite'
+    postgresql = 'postgresql'
+
+    @classmethod
+    def has_db_key(cls, db_name):
+        return db_name in cls.__members__
+
+    @classmethod
+    def get_all_db_names(cls):
+        return cls.__members__
+
+
+db_configs = dict()
+
+DATABASE = os.environ.get('DATABASE', None)
+if not DATABASE or not SupportedDatabases.has_db_key(DATABASE):
+    raise Exception("DATABASE is not set properly. Set Environment Variable 'DATABASE' "
+                    "to {0}".format(' or '.join(SupportedDatabases.get_all_db_names())))
+
+if DATABASE == SupportedDatabases.postgresql.value:
+    DB_HOST = os.environ.get('DB_HOST', None)
+    DB_NAME = os.environ.get('DB_NAME', None)
+    DB_USER = os.environ.get('DB_USER', None)
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', None)
+    DB_PORT = os.environ.get('DB_PORT', None)
+    DB_TEST_NAME = os.environ.get('DB_TEST_NAME', 'TestdbToDoFehrist')
+
+    if not DB_HOST or not DB_USER or not DB_NAME or not DB_PASSWORD or not DB_PORT:
+        raise Exception("For PostgreSQL database selection, some Database Credentials are not set. "
+                        "Check 'DB_HOST' or 'DB_NAME' or 'DB_USER' or DB_PASSWORD or 'DB_PORT'")
+
+    postgresql_config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'HOST': DB_HOST,
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'PORT': DB_PORT,
+            'TEST': {
+                'NAME': DB_TEST_NAME
+            }
     }
+
+    db_configs[SupportedDatabases.postgresql.value] = postgresql_config
+
+if DATABASE == SupportedDatabases.sqlite.value:
+
+    sqlite_config = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+    }
+
+    db_configs[SupportedDatabases.sqlite.value] = sqlite_config
+
+DATABASES = {
+    'default': db_configs[DATABASE]
 }
 
 
