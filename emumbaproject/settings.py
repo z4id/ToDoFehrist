@@ -25,19 +25,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', None)
 ENVIRONMENT_STAGE = os.environ.get('ENV', None)
 
-if not ENVIRONMENT_STAGE:
-    raise Exception("ENVIRONMENT not set. Check your Environment Variable ENV.")
-if ENVIRONMENT_STAGE not in ['DEV', 'QA', 'UAT', 'PROD']:
-    raise Exception("ENVIRONMENT has Invalid Selection. Check your Environment Variable 'ENV'. "
-                    "Possible Stages: 'DEV' or 'QA' or 'UAT' or 'PROD'")
 
-if ENVIRONMENT_STAGE == "DEV":
+class EnvironmentStages(enum.Enum):
+    DEV = "DEV"
+    QA = "QA"
+    UAT = "UAT"
+    PROD = "PROD"
+
+    @classmethod
+    def get_all_env_stage_names(cls):
+        return cls.__members__
+
+    @classmethod
+    def has_stage_name(cls, stage_name):
+        return stage_name in cls.__members__
+
+
+if not (ENVIRONMENT_STAGE and EnvironmentStages.has_stage_name(ENVIRONMENT_STAGE)):
+    raise Exception("ENVIRONMENT not set properly. Check your Environment Variable 'ENV'. "
+                    "Possible 'ENV' Stages: {0}".format(" or ".join(EnvironmentStages.get_all_env_stage_names())))
+
+if ENVIRONMENT_STAGE == EnvironmentStages.DEV.value:
     SECRET_KEY = get_random_secret_key() if not SECRET_KEY else SECRET_KEY
 elif not SECRET_KEY:
     raise Exception("SECRET_KEY is not set in settings.py. Check your Environment Variable 'SECRET_KEY'")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT_STAGE == "DEV":
+if ENVIRONMENT_STAGE == EnvironmentStages.DEV.value:
     DEBUG = True
     ALLOWED_HOSTS = ['*']
 else:
@@ -106,7 +120,7 @@ class SupportedDatabases(enum.Enum):
 db_configs = dict()
 
 DATABASE = os.environ.get('DATABASE', None)
-if not DATABASE or not SupportedDatabases.has_db_key(DATABASE):
+if not (DATABASE and SupportedDatabases.has_db_key(DATABASE)):
     raise Exception("DATABASE is not set properly. Set Environment Variable 'DATABASE' "
                     "to {0}".format(' or '.join(SupportedDatabases.get_all_db_names())))
 
