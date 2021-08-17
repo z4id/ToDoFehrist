@@ -13,6 +13,17 @@ import enum
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import os
+import logging
+import logging.handlers
+
+# Implement Logging Handler
+LOG_FILE = os.environ.get('LOG_FILE', '/var/log/todofehrist.log')
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+handler = logging.handlers.WatchedFileHandler(LOG_FILE)
+formatter = logging.Formatter(logging.BASIC_FORMAT)
+handler.setFormatter(formatter)
+root = logging.getLogger()
+root.setLevel(LOG_LEVEL)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
