@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 
 class UserSubscriptionType(models.Model):
     name = models.CharField(max_length=30, unique=True, null=False)
+    price = models.IntegerField(default=0, null=False)
+    currency = models.CharField(default='USD')
 
 
 class AppUser(User):
@@ -13,7 +15,8 @@ class AppUser(User):
 
 
 class Task(models.Model):
-    title = models.CharField(max_length=50)
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, null=False)
+    title = models.CharField(max_length=50, null=False)
     description = models.CharField(max_length=300)
     due_datetime = models.DateTimeField()
     completion_status = models.BooleanField(default=False)
@@ -23,17 +26,17 @@ class Task(models.Model):
     updated_datetime = models.DateTimeField()
 
 
-class UserMediaFiles(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+class TaskMediaFiles(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=50)
     file = models.FileField()
     uploaded_datetime = models.DateTimeField()
     last_accessed_datetime = models.DateTimeField()
-    is_deleted = models.BooleanField()
+    is_deleted = models.BooleanField(default=False)
 
 
 class UserSubscriptionLimits(models.Model):
-    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE)
+    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE, null=False)
     max_allowed_tasks = models.IntegerField()
     max_allowed_files = models.IntegerField()
     allowed_files_per_task = models.IntegerField()
@@ -44,7 +47,7 @@ class UserSubscriptionLimits(models.Model):
 
 
 class UserQuotaManagement(models.Model):
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, null=False)
     total_tasks = models.IntegerField()
     downloaded_file_count = models.IntegerField()
     last_downloaded_datetime = models.DateTimeField()
