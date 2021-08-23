@@ -15,4 +15,7 @@ RESTful API for ToDo List application developed in PPDL (Python-PostgreSQL-Djang
             3.3: DB_USER = 'database_username'
             3.4: DB_PASSWORD = 'database_password'
             3.5: DB_PORT = database_port_number
+        4: LOG_LEVEL = 'INFO' or 'DEBUG' or 'WARNING' or 'ERROR' (Optional, default: 'INFO')
+        5: LOG_FILE = 'PATH_TO_LOG_FILE' (Optional, default: '/var/log/todofehrist.log')
+        
         If any environment variable isn't set, then an exception will be thrown.
