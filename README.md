@@ -3,6 +3,9 @@ RESTful API for ToDo List application developed in PPDL (Python-PostgreSQL-Djang
 
 ## Run Project
     - Set Environment Variables
+
+        source env_vars.rc
+
         1: ENV = 'DEV' or 'QA' or 'UAT' or 'PROD'
         2: SECRET_KEY = 'Your_Django_SECRET_KEY'
         3: DATABASE = 'sqlite' or 'postgresql'
