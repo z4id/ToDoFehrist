@@ -1,5 +1,8 @@
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.conf import settings
 from todofehrist.enums import UserSubscriptionTypesEnum
 
 
@@ -41,8 +44,22 @@ class AppUser(AbstractUser):
     objects = AppUserManager()
 
 
+class AppUserLogin(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
+    token = models.CharField(max_length=256, null=False)
+    created_at = models.DateTimeField(default=datetime.datetime.utcnow())
+    expire_at = models.DateTimeField(null=True)
+
+    def save(self, *args, **kwargs):
+        self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME
+        super(AppUserLogin, self).save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'AppUserLogin'
+
+
 class Task(models.Model):
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     title = models.CharField(max_length=50, null=False)
     description = models.CharField(max_length=300)
     due_datetime = models.DateTimeField()
@@ -74,7 +91,7 @@ class UserSubscriptionLimits(models.Model):
 
 
 class UserQuotaManagement(models.Model):
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     total_tasks = models.IntegerField()
     downloaded_file_count = models.IntegerField()
     last_downloaded_datetime = models.DateTimeField()
