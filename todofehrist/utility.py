@@ -14,7 +14,7 @@ def send_email(subject, body, to_):
     new_email.send()
 
 
-def account_act_token_gen():
+def account_token_gen():
     return PasswordResetTokenGenerator()
 
 
@@ -23,7 +23,7 @@ def send_activation_email(app_user, request):
     body = render_to_string('email_verification.html', {
         "domain": get_current_site(request).domain,
         "uid": urlsafe_base64_encode(force_bytes(app_user.pk)),
-        "token": account_act_token_gen().make_token(app_user)
+        "token": account_token_gen().make_token(app_user)
     })
 
     send_email(subject, body, [app_user.email])

@@ -235,3 +235,5 @@ if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD or not EMAIL
     exception_message = "EMAIL CREDENTIALS are not properly set."
     logging.exception(exception_message)
     raise Exception(exception_message)
+
+LOGIN_TOKEN_EXPIRY_TIME = 3600  # seconds

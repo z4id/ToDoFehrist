@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from todofehrist.models import AppUser
+from todofehrist.models import AppUser, AppUserLogin
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -8,10 +8,20 @@ class AppUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, validators=validators_)
 
     def create(self, validated_data):
-        print(validated_data)
         app_user = AppUser.objects.create_app_user(email_address=validated_data['email'], password=validated_data['password'])
         return app_user
 
     class Meta:
         model = AppUser
         fields = ('id', 'email', 'password')
+
+
+class AppUserLoginSerializer(serializers.Serializer):
+
+    token = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    expire_at = serializers.DateTimeField()
+
+    class Meta:
+        model = AppUserLogin
+        fields = ('id', 'user', 'token', 'created_at', 'expire_at')
