@@ -7,7 +7,7 @@ import logging
 
 from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer
 from todofehrist.models import AppUser as AppUser
-from todofehrist.utility import send_activation_email, account_token_gen
+from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler
 from django.utils.http import urlsafe_base64_decode
 
 
@@ -88,7 +88,13 @@ class AppUserLoginView(APIView):
             return Response(serializer_.data['token'], status=status.HTTP_200_OK)
 
 
+class ReportView(APIView):
 
-
-
-
+    @login_required
+    def get(self, request, user):
+        report_name = request.GET.get('name')
+        report_data, error = reports_handler(report_name, user)
+        if report_data:
+            return Response(report_data, status=status.HTTP_200_OK)
+        else:
+            return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
