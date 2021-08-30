@@ -18,11 +18,37 @@ import logging.handlers
 # Implement Logging Handler
 LOG_FILE = os.environ.get('LOG_FILE', 'todofehrist_api.log')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-handler = logging.handlers.WatchedFileHandler(LOG_FILE)
-formatter = logging.Formatter(logging.BASIC_FORMAT)
-handler.setFormatter(formatter)
-root = logging.getLogger()
-root.setLevel(LOG_LEVEL)
+
+# Configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "root": {"level": LOG_LEVEL, "handlers": ["file"]},
+    "handlers": {
+        "file": {
+            "level": LOG_LEVEL,
+            "class": "logging.FileHandler",
+            "filename": LOG_FILE,
+            "formatter": "app",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "INFO",
+            "propagate": True
+        },
+    },
+    "formatters": {
+        "app": {
+            "format": (
+                u"%(asctime)s [%(levelname)-8s] "
+                "(%(module)s.%(funcName)s) %(message)s"
+            ),
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+}
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,6 +119,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'todofehrist.middleware.LoggingRequestResponse',
 ]
 
 ROOT_URLCONF = 'emumbaproject.urls'
