@@ -25,4 +25,11 @@ API Documentation: http://server_ip/doc/
     - Run Application
         python manage.py makemigrations
         python manage.py migrate
+        python manage.py test
+        python manage.py loaddata fixture_1
         python manage.py runserver
+
+    - RUn Celery Worker and Celery Beat for scheduling tasks via crontab
+        sudo apt install redis
+        celery -A emumbaproject.celery worker --loglevel=info
+        celery -A emumbaproject.celery beat -l debug

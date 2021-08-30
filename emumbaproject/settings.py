@@ -123,8 +123,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'todofehrist.middleware.LoggingRequestResponse',
-    # 'social_django.middleware.SocialAuthExceptionMiddleware',
 ]
+# 'social_django.middleware.SocialAuthExceptionMiddleware',
 
 ROOT_URLCONF = 'emumbaproject.urls'
 
@@ -270,6 +270,8 @@ if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD or not EMAIL
 LOGIN_TOKEN_EXPIRY_TIME = 3600  # seconds
 REPORT_CACHE_TIME = 15*60  # seconds, 15 minutes
 
+CELERY_TIMEZONE = 'UTC'
+BROKER_URL = 'redis://127.0.0.1:6379'
 
 # Facebook configuration
 # SOCIAL_AUTH_FACEBOOK_KEY = os.environ.get('FACEBOOK_APP_ID', None)
