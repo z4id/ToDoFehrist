@@ -1,11 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from rest_framework import status
 
 import logging
 
-from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer
+from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, TaskSerializer, TaskMediaFilesSerializer
 from todofehrist.models import AppUser as AppUser, Task, TaskMediaFiles
 from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler, \
     send_forgot_password_email
