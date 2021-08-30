@@ -34,6 +34,15 @@ def send_activation_email(app_user, request):
     send_email(subject, body, [app_user.email])
 
 
+def send_forgot_password_email(app_user):
+    subject = 'ToDoFehrist - Forgot Password Request'
+    body = render_to_string('forgot_password_email.html', {
+        "token": account_token_gen().make_token(app_user)
+    })
+
+    send_email(subject, body, [app_user.email])
+
+
 def login_required(f):
     def wrap(self, request, user=0, *args, **kwargs):
 

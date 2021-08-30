@@ -16,11 +16,9 @@ class AppUserSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'password')
 
 
-class AppUserLoginSerializer(serializers.Serializer):
+class AppUserLoginSerializer(serializers.ModelSerializer):
 
     token = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    expire_at = serializers.DateTimeField()
 
     class Meta:
         model = AppUserLogin
