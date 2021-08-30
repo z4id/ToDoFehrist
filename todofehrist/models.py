@@ -59,42 +59,62 @@ class AppUserLogin(models.Model):
         db_table = 'AppUserLogin'
 
 
+class UserQuotaManagement(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
+    total_tasks = models.IntegerField(default=0)
+    downloaded_file_count = models.IntegerField(default=0)
+    last_downloaded_datetime = models.DateTimeField(null=True)
+    uploaded_files_count = models.IntegerField(default=0)
+    last_uploaded_datetime = models.DateTimeField(null=True)
+
+
+class UserSubscriptionLimits(models.Model):
+    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE, null=False)
+    max_allowed_tasks = models.IntegerField(default=0)
+    max_allowed_files = models.IntegerField(default=0)
+    allowed_files_per_task = models.IntegerField(default=0)
+    max_file_size = models.IntegerField(default=0)
+    max_downloads_per_day = models.IntegerField(default=0)
+    max_uploads_per_day = models.IntegerField(default=0)
+    permanent_deletion_time = models.IntegerField(default=0)  # seconds
+
+
 class Task(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     title = models.CharField(max_length=50, null=False)
     description = models.CharField(max_length=300)
     due_datetime = models.DateTimeField()
     completion_status = models.BooleanField(default=False)
-    completion_datetime = models.DateTimeField()
-    files_count = models.IntegerField()
-    created_datetime = models.DateTimeField()
-    updated_datetime = models.DateTimeField()
+    completion_datetime = models.DateTimeField(null=True)
+    files_count = models.IntegerField(default=0)
+    created_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
+    updated_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
+
+    def save(self, *args, **kwargs):
+
+        can_be_updated = False
+
+        result = UserQuotaManagement.objects.get_or_create(user=self.user)
+        quota_obj = result[0]
+
+        max_allowed_tasks = UserSubscriptionLimits.objects.get(
+            user_subscription_type=self.user.user_subscription_type).max_allowed_tasks
+
+        if quota_obj.total_tasks < max_allowed_tasks:
+            quota_obj.total_tasks += 1
+            quota_obj.save()
+            can_be_updated = True
+
+        if can_be_updated:
+            super(Task, self).save(*args, **kwargs)
+        else:
+            raise Exception("User Quota for Task Creation Reached.")
 
 
 class TaskMediaFiles(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=50)
-    file = models.FileField()
-    uploaded_datetime = models.DateTimeField()
-    last_accessed_datetime = models.DateTimeField()
+    file = models.FileField(null=False)
+    uploaded_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
+    last_accessed_datetime = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
-
-
-class UserSubscriptionLimits(models.Model):
-    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE, null=False)
-    max_allowed_tasks = models.IntegerField()
-    max_allowed_files = models.IntegerField()
-    allowed_files_per_task = models.IntegerField()
-    max_file_size = models.IntegerField()
-    max_downloads_per_day = models.IntegerField()
-    max_uploads_per_day = models.IntegerField()
-    permanent_deletion_time = models.IntegerField()  # seconds
-
-
-class UserQuotaManagement(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
-    total_tasks = models.IntegerField()
-    downloaded_file_count = models.IntegerField()
-    last_downloaded_datetime = models.DateTimeField()
-    uploaded_files_count = models.IntegerField()
-    last_uploaded_datetime = models.DateTimeField()
