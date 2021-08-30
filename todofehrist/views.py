@@ -13,12 +13,12 @@ from todofehrist.utility import send_activation_email, account_token_gen, login_
     send_forgot_password_email
 from django.utils.http import urlsafe_base64_decode
 
-from rest_framework import generics, permissions
-from requests.exceptions import HTTPError
-
-from social_django.utils import load_strategy, load_backend
-from social_core.backends.oauth import BaseOAuth2
-from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
+# from rest_framework import generics, permissions
+# from requests.exceptions import HTTPError
+#
+# from social_django.utils import load_strategy, load_backend
+# from social_core.backends.oauth import BaseOAuth2
+# from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
 
 
 logger = logging.getLogger("emumbaproject.todofehrist.views.py")
