@@ -7,7 +7,8 @@ import logging
 
 from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer
 from todofehrist.models import AppUser as AppUser
-from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler
+from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler, \
+    send_forgot_password_email
 from django.utils.http import urlsafe_base64_decode
 
 
@@ -58,26 +59,31 @@ class AppUserLoginView(APIView):
         app_user = None
 
         try:
-            app_user = AppUser.objects.get(email=request.POST.get('email', ''))
+            app_user = AppUser.objects.get(email=request.data.get('email', ''))
 
         except AppUser.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
             logger.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not app_user.is_email_verified:
             msg = "403 - AppUserLoginView: provided email in POST request isn't verified yet."
             logger.debug(msg)
-        elif not app_user.check_password(request.POST.get('password', '')):
+            return Response({"msg": "Email Address isn't verified yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif not app_user.check_password(request.data.get('password', '')):
             msg = "403 - AppUserLoginView: provided email/password pair is not correct. Try Again."
             logger.exception(msg)
+            return Response({"msg": "Email/Password pair isn't valid."}, status=status.HTTP_400_BAD_REQUEST)
 
         token = account_token_gen().make_token(app_user)
 
-        serializer_ = AppUserLoginSerializer({"user": app_user, "token": token})
+        serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
 
         if not serializer_.is_valid():
             msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
             logger.exception(msg)
+            return Response({"msg": "Invalid Email/Password. Try Again."}, status=status.HTTP_400_BAD_REQUEST)
 
         appuser_login = serializer_.save()
 
@@ -85,7 +91,53 @@ class AppUserLoginView(APIView):
         logger.info(msg)
 
         if appuser_login:
-            return Response(serializer_.data['token'], status=status.HTTP_200_OK)
+            return Response({"token": serializer_.data['token']}, status=status.HTTP_200_OK)
+
+
+class AppUserResetPasswordView(APIView):
+
+    def get(self, request):
+
+        app_user = None
+
+        try:
+            app_user = AppUser.objects.get(email=request.data.get('email', ''))
+
+        except AppUser.DoesNotExist:
+            msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
+            logger.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        send_forgot_password_email(app_user)
+
+        return Response({"msg": f"A password reset token is sent to your email {app_user.email}"},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+
+        app_user = None
+
+        try:
+            app_user = AppUser.objects.get(email=request.data.get('email', ''))
+
+        except AppUser.DoesNotExist:
+            msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
+            logger.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if account_token_gen().check_token(app_user, request.data.get('reset_token', '')):
+            password_ = request.data.get('new_password', None)
+            if password_:
+                app_user.set_password(raw_password=password_)
+                app_user.save()
+                return Response({"msg": f"Password reset is successful."},
+                                status=status.HTTP_200_OK)
+            else:
+                return Response({"msg": f"Invalid Password String"},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"msg": f"Invalid reset_token provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ReportView(APIView):

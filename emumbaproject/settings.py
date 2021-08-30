@@ -10,15 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import enum
-import logging
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import os
-import logging
 import logging.handlers
 
 # Implement Logging Handler
-LOG_FILE = os.environ.get('LOG_FILE', '/var/log/todofehrist.log')
+LOG_FILE = os.environ.get('LOG_FILE', 'todofehrist_api.log')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 handler = logging.handlers.WatchedFileHandler(LOG_FILE)
 formatter = logging.Formatter(logging.BASIC_FORMAT)
@@ -82,6 +80,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_yasg',
     'todofehrist'
 ]
 
@@ -237,3 +237,4 @@ if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD or not EMAIL
     raise Exception(exception_message)
 
 LOGIN_TOKEN_EXPIRY_TIME = 3600  # seconds
+REPORT_CACHE_TIME = 15*60  # seconds, 15 minutes

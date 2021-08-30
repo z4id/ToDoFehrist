@@ -51,7 +51,8 @@ class AppUserLogin(models.Model):
     expire_at = models.DateTimeField(null=True)
 
     def save(self, *args, **kwargs):
-        self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME
+        # self.expire_at = self.created_at
+        # self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME.seconds
         super(AppUserLogin, self).save(*args, **kwargs)
 
     class Meta:
