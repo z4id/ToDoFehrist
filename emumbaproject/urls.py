@@ -46,4 +46,6 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('', include('todofehrist.urls')),
+
+    # path('api/v1/oauth/', include('rest_framework_social_oauth2.urls')),
 ]

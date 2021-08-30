@@ -5,6 +5,7 @@ from django.views.decorators.cache import cache_page
 
 from todofehrist.views import AppUserView, activate_account, AppUserLoginView, ReportView, AppUserResetPasswordView, \
     TaskView, TaskUpdateView, TaskMediaFileView
+# from todofehrist.views import SocialLoginView
 from todofehrist.exceptions import HTTPStatusCodeHandler
 
 urlpatterns = [
@@ -16,6 +17,8 @@ urlpatterns = [
 
     # User Sign In/Log Out
     path('api/v1/auth', AppUserLoginView.as_view()),
+
+    # path('api/v1/oauth/', SocialLoginView.as_view()),
 
     # User Forgot & Reset Password Request
     path('api/v1/auth/reset', AppUserResetPasswordView.as_view()),

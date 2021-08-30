@@ -5,11 +5,20 @@ from rest_framework import status
 
 import logging
 
-from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, TaskSerializer, TaskMediaFilesSerializer
+from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, TaskSerializer, \
+    TaskMediaFilesSerializer
+# from todofehrist.serializers import SocialSerializer
 from todofehrist.models import AppUser as AppUser, Task, TaskMediaFiles
 from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler, \
     send_forgot_password_email
 from django.utils.http import urlsafe_base64_decode
+
+from rest_framework import generics, permissions
+from requests.exceptions import HTTPError
+
+from social_django.utils import load_strategy, load_backend
+from social_core.backends.oauth import BaseOAuth2
+from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
 
 
 logger = logging.getLogger("emumbaproject.todofehrist.views.py")
@@ -296,3 +305,62 @@ class ReportView(APIView):
             return Response(report_data, status=status.HTTP_200_OK)
         else:
             return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
+
+
+# class SocialLoginView(generics.GenericAPIView):
+#     """Auth/Login using Facebook"""
+#     serializer_class = SocialSerializer
+#     permission_classes = [permissions.AllowAny]
+#
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         provider = serializer.data.get('provider', None)
+#         strategy = load_strategy(request)
+#
+#         try:
+#             backend = load_backend(strategy=strategy, name=provider,
+#                                    redirect_uri=None)
+#
+#         except MissingBackend:
+#             return Response({'error': 'Please provide a valid provider'},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             if isinstance(backend, BaseOAuth2):
+#                 access_token = serializer.data.get('access_token')
+#             user = backend.do_auth(access_token)
+#         except HTTPError as error:
+#             return Response({
+#                 "error": {
+#                     "access_token": "Invalid token",
+#                     "details": str(error)
+#                 }
+#             }, status=status.HTTP_400_BAD_REQUEST)
+#         except AuthTokenError as error:
+#             return Response({
+#                 "error": "Invalid credentials",
+#                 "details": str(error)
+#             }, status=status.HTTP_400_BAD_REQUEST)
+#
+#         try:
+#             app_user = backend.do_auth(access_token, user=user)
+#
+#         except HTTPError as error:
+#             return Response({
+#                 "error": "invalid token",
+#                 "details": str(error)
+#             }, status=status.HTTP_400_BAD_REQUEST)
+#
+#         except AuthForbidden as error:
+#             return Response({
+#                 "error": "invalid token",
+#                 "details": str(error)
+#             }, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if app_user:
+#
+#             response = {
+#                 "email": app_user.email,
+#                 "token": account_token_gen().make_token(app_user)
+#             }
+#             return Response(response, status=status.HTTP_200_OK)
