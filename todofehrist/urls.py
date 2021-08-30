@@ -10,13 +10,13 @@ from todofehrist.exceptions import HTTPStatusCodeHandler
 
 urlpatterns = [
     # User Registration
-    path('api/v1/register', AppUserView.as_view()),
+    path('api/v1/register', AppUserView.as_view(), name='register'),
 
     # Account Registration via Email Verification
     path('v1/activate/<uid>/<token>', activate_account, name='activate'),  # Email Verification
 
     # User Sign In/Log Out
-    path('api/v1/auth', AppUserLoginView.as_view()),
+    path('api/v1/auth', AppUserLoginView.as_view(), name='login'),
 
     # path('api/v1/oauth/', SocialLoginView.as_view()),
 
