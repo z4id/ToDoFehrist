@@ -6,7 +6,7 @@ from rest_framework import status
 import logging
 
 from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer
-from todofehrist.models import AppUser as AppUser
+from todofehrist.models import AppUser as AppUser, Task, TaskMediaFiles
 from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler, \
     send_forgot_password_email
 from django.utils.http import urlsafe_base64_decode
@@ -138,6 +138,152 @@ class AppUserResetPasswordView(APIView):
         else:
             return Response({"msg": f"Invalid reset_token provided."},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class TaskView(APIView):
+
+    @login_required
+    def get(self, request, user):
+
+        search_term = request.GET.get('search', None)
+
+        if search_term:
+            tasks = Task.objects.filter(user=user.id, title__contains=search_term)
+            serializer_ = TaskSerializer(tasks, many=True)
+            return Response(serializer_.data, status=status.HTTP_200_OK)
+
+        tasks = Task.objects.filter(user=user.id)
+        serializer_ = TaskSerializer(tasks, many=True)
+        return Response(serializer_.data, status=status.HTTP_200_OK)
+
+    @login_required
+    def post(self, request, user):
+        data_ = request.data.copy()
+        data_["user"] = user.id
+
+        serializer_ = TaskSerializer(data=data_)
+        if not serializer_.is_valid():
+            return Response(serializer_.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            task = serializer_.save()
+            return Response(serializer_.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"msg": "User Quota for Task Creation Reached."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TaskUpdateView(APIView):
+
+    @login_required
+    def get(self, request, user, task_id):
+
+        task_ = None
+
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+        except Exception:
+            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_ = TaskSerializer(task_)
+        return Response(serializer_.data, status=status.HTTP_200_OK)
+
+    @login_required
+    def post(self, request, user, task_id):
+
+        data_ = request.data.copy()
+        data_["user"] = user.id
+
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+        except Exception:
+            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_ = TaskSerializer(data=data_, partial=True)
+        if not serializer_.is_valid():
+            return Response(serializer_.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer_.update(task_, data_)
+
+        return Response(serializer_.data, status=status.HTTP_200_OK)
+
+    @login_required
+    def delete(self, request, user, task_id):
+
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+        except Exception:
+            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        task_.delete()
+
+        return Response({"msg": f"Task with id {task_id} is deleted successfully."}, status=status.HTTP_200_OK)
+
+
+class TaskMediaFileView(APIView):
+
+    @login_required
+    def get(self, request, user, task_id, file_id):
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+        except:
+            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
+        except:
+            return Response({"msg": f"File with id {file_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        file_handle = task_file.file.open()
+
+        # send file
+        response = FileResponse(file_handle, content_type='bytes')
+        response['Content-Length'] = task_file.file.size
+        response['Content-Disposition'] = 'attachment; filename="%s"' % task_file.file.name
+
+        return response
+
+    @login_required
+    def post(self, request, user, task_id):
+
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+        except:
+            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        data_ = request.data.copy()
+        data_['task'] = task_id
+
+        if data_['file']:
+            data_['name'] = data_['file'].name
+        else:
+            data_['name'] = ''
+
+        file_serializer = TaskMediaFilesSerializer(data=data_)
+
+        if file_serializer.is_valid():
+            file_serializer.save()
+            return Response(file_serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(file_serializer.errors, status=status.HTTP_200_OK)
+
+    @login_required
+    def delete(self, request, user, task_id, file_id):
+        try:
+            task_ = Task.objects.get(id=task_id, user=user.id)
+            task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
+        except Exception:
+            return Response({"msg": f"File with id {file_id} doesn't exist or belong to you."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        task_file.delete()
+
+        return Response({"msg": f"File with id {file_id} is deleted successfully."}, status=status.HTTP_200_OK)
 
 
 class ReportView(APIView):
