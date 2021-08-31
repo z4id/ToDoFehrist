@@ -1,17 +1,28 @@
+"""
+NAME
+    todofehrist.views
+
+DESCRIPTION
+    This file contains all todofehrist app views.
+    ============================================
+
+AUTHOR
+    Zaid Afzal
+"""
+import logging
+from django.http import HttpResponse, FileResponse
+from django.utils.http import urlsafe_base64_decode
+
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import HttpResponse, FileResponse
-from rest_framework import status
 
-import logging
-
-from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, TaskSerializer, \
-    TaskMediaFilesSerializer
+from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, \
+    TaskSerializer, TaskMediaFilesSerializer
 # from todofehrist.serializers import SocialSerializer
-from todofehrist.models import AppUser as AppUser, Task, TaskMediaFiles
-from todofehrist.utility import send_activation_email, account_token_gen, login_required, reports_handler, \
-    send_forgot_password_email
-from django.utils.http import urlsafe_base64_decode
+from todofehrist.models import AppUser, Task, TaskMediaFiles
+from todofehrist.utility import send_activation_email, account_token_gen, \
+    login_required, reports_handler, send_forgot_password_email
 
 # from rest_framework import generics, permissions
 # from requests.exceptions import HTTPError
@@ -21,29 +32,43 @@ from django.utils.http import urlsafe_base64_decode
 # from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
 
 
-logger = logging.getLogger("emumbaproject.todofehrist.views.py")
-
-
 class AppUserView(APIView):
+    """
+    NAME
+        AppUserView
+
+    DESCRIPTION
+        Contains handler for registering a new user.
+    """
 
     def post(self, request):
+        """
+        POST request handler which validates and registers a new AppUser
+        """
 
         serializer = AppUserSerializer(data=request.data)
         if not serializer.is_valid():
-            logger.exception("AppUserSerializer request.data is not valid.")
+            logging.exception("AppUserSerializer request.data is not valid.")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         app_user = serializer.save()
-        logger.info("New AppUser created and stored successfully.")
+        logging.info("New AppUser created and stored successfully.")
 
         send_activation_email(app_user, request)
 
-        return Response({"msg": f"Sign Up Successful. An account activation link is sent to your email"
-                                f"to your email '{app_user.email}'. Kindly confirm it before first login."},
+        response_msg = f"Sign Up Successful. An account activation link is " \
+                       f"sent to your email to your email '{app_user.email}', " \
+                       f"Kindly confirm it before first login."
+
+        return Response({"msg": response_msg},
                         status=status.HTTP_200_OK)
 
 
 def activate_account(request, uid, token):
+    """
+    This is handler for verifying a user when it clicks the url
+    provided in verification email.
+    """
 
     try:
         uid = urlsafe_base64_decode(uid).decode()
@@ -62,8 +87,18 @@ def activate_account(request, uid, token):
 
 
 class AppUserLoginView(APIView):
+    """
+    NAME
+        AppUserLoginView
+
+    DESCRIPTION
+
+    """
 
     def post(self, request):
+        """
+        POST request handler
+        """
 
         app_user = None
 
@@ -72,18 +107,21 @@ class AppUserLoginView(APIView):
 
         except AppUser.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
-            logger.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if not app_user.is_email_verified:
             msg = "403 - AppUserLoginView: provided email in POST request isn't verified yet."
-            logger.debug(msg)
-            return Response({"msg": "Email Address isn't verified yet."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.debug(msg)
+            return Response({"msg": "Email Address isn't verified yet."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        elif not app_user.check_password(request.data.get('password', '')):
+        if not app_user.check_password(request.data.get('password', '')):
             msg = "403 - AppUserLoginView: provided email/password pair is not correct. Try Again."
-            logger.exception(msg)
-            return Response({"msg": "Email/Password pair isn't valid."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.exception(msg)
+            return Response({"msg": "Email/Password pair isn't valid."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         token = account_token_gen().make_token(app_user)
 
@@ -91,21 +129,32 @@ class AppUserLoginView(APIView):
 
         if not serializer_.is_valid():
             msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
-            logger.exception(msg)
-            return Response({"msg": "Invalid Email/Password. Try Again."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.exception(msg)
+            return Response({"msg": "Invalid Email/Password. Try Again."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         appuser_login = serializer_.save()
 
         msg = "200 - AppUserLoginView: UserLogged In Successfully."
-        logger.info(msg)
+        logging.info(msg)
 
-        if appuser_login:
-            return Response({"token": serializer_.data['token']}, status=status.HTTP_200_OK)
+        return Response({"token": serializer_.data['token']},
+                        status=status.HTTP_200_OK)
 
 
 class AppUserResetPasswordView(APIView):
+    """
+    NAME
+        AppUserResetPasswordView
+
+    DESCRIPTION
+
+    """
 
     def get(self, request):
+        """
+        GET Request Handler
+        """
 
         app_user = None
 
@@ -114,15 +163,20 @@ class AppUserResetPasswordView(APIView):
 
         except AppUser.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
-            logger.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         send_forgot_password_email(app_user)
 
-        return Response({"msg": f"A password reset token is sent to your email {app_user.email}"},
+        response_msg = f"A password reset token is sent to your email {app_user.email}"
+        return Response({"msg": response_msg},
                         status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
+        """
+        POST request handler
+        """
 
         app_user = None
 
@@ -131,28 +185,39 @@ class AppUserResetPasswordView(APIView):
 
         except AppUser.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
-            logger.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."}, status=status.HTTP_400_BAD_REQUEST)
+            logging.exception(msg)
+            return Response({"msg": "Email Address doesn't exist."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if account_token_gen().check_token(app_user, request.data.get('reset_token', '')):
             password_ = request.data.get('new_password', None)
             if password_:
                 app_user.set_password(raw_password=password_)
                 app_user.save()
-                return Response({"msg": f"Password reset is successful."},
+                return Response({"msg": "Password reset is successful."},
                                 status=status.HTTP_200_OK)
             else:
-                return Response({"msg": f"Invalid Password String"},
+                return Response({"msg": "Invalid Password String"},
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"msg": f"Invalid reset_token provided."},
+            return Response({"msg": "Invalid reset_token provided."},
                             status=status.HTTP_400_BAD_REQUEST)
 
 
 class TaskView(APIView):
+    """
+    NAME
+        TaskView
+
+    DESCRIPTION
+
+    """
 
     @login_required
     def get(self, request, user):
+        """
+        GET Request Handler
+        """
 
         search_term = request.GET.get('search', None)
 
@@ -167,6 +232,9 @@ class TaskView(APIView):
 
     @login_required
     def post(self, request, user):
+        """
+        POST Request Handler
+        """
         data_ = request.data.copy()
         data_["user"] = user.id
 
@@ -177,14 +245,25 @@ class TaskView(APIView):
         try:
             task = serializer_.save()
             return Response(serializer_.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"msg": "User Quota for Task Creation Reached."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exception_:
+            return Response({"msg": "User Quota for Task Creation Reached."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class TaskUpdateView(APIView):
+    """
+    NAME
+        TaskUpdateView
+
+    DESCRIPTION
+
+    """
 
     @login_required
     def get(self, request, user, task_id):
+        """
+        GET Request Handler
+        """
 
         task_ = None
 
@@ -199,6 +278,9 @@ class TaskUpdateView(APIView):
 
     @login_required
     def post(self, request, user, task_id):
+        """
+        POST Request Handler
+        """
 
         data_ = request.data.copy()
         data_["user"] = user.id
@@ -219,6 +301,9 @@ class TaskUpdateView(APIView):
 
     @login_required
     def delete(self, request, user, task_id):
+        """
+        DELETE Request Handler
+        """
 
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
@@ -228,22 +313,32 @@ class TaskUpdateView(APIView):
 
         task_.delete()
 
-        return Response({"msg": f"Task with id {task_id} is deleted successfully."}, status=status.HTTP_200_OK)
+        return Response({"msg": f"Task with id {task_id} is deleted successfully."},
+                        status=status.HTTP_200_OK)
 
 
 class TaskMediaFileView(APIView):
+    """
+    NAME
+        TaskMediaFileView
 
+    DESCRIPTION
+
+    """
     @login_required
     def get(self, request, user, task_id, file_id):
+        """
+        GET Request Handler
+        """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except:
+        except Exception:
             return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         try:
             task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
-        except:
+        except Exception:
             return Response({"msg": f"File with id {file_id} doesn't exist or belong to you."},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -258,10 +353,13 @@ class TaskMediaFileView(APIView):
 
     @login_required
     def post(self, request, user, task_id):
+        """
+        POST Request Handler
+        """
 
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except:
+        except Exception:
             return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -278,11 +376,14 @@ class TaskMediaFileView(APIView):
         if file_serializer.is_valid():
             file_serializer.save()
             return Response(file_serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response(file_serializer.errors, status=status.HTTP_200_OK)
+
+        return Response(file_serializer.errors, status=status.HTTP_200_OK)
 
     @login_required
     def delete(self, request, user, task_id, file_id):
+        """
+        DELETE Request Handler
+        """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
             task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
@@ -292,19 +393,29 @@ class TaskMediaFileView(APIView):
 
         task_file.delete()
 
-        return Response({"msg": f"File with id {file_id} is deleted successfully."}, status=status.HTTP_200_OK)
+        return Response({"msg": f"File with id {file_id} is deleted successfully."},
+                        status=status.HTTP_200_OK)
 
 
 class ReportView(APIView):
+    """
+    NAME
+        ReportView
 
+    DESCRIPTION
+
+    """
     @login_required
     def get(self, request, user):
+        """
+        GET Request Handler
+        """
         report_name = request.GET.get('name')
         report_data, error = reports_handler(report_name, user)
         if report_data:
             return Response(report_data, status=status.HTTP_200_OK)
-        else:
-            return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
 
 
 # class SocialLoginView(generics.GenericAPIView):

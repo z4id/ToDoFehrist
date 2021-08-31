@@ -3,7 +3,7 @@
     "model": "todofehrist.usersubscriptiontype",
     "pk": 1,
     "fields": {
-      "name": "Freemium",
+      "name": "FREEMIUM",
       "price": 0,
       "currency": "USD"
     }
@@ -12,7 +12,7 @@
     "model": "todofehrist.usersubscriptiontype",
     "pk": 2,
     "fields": {
-      "name": "Premium",
+      "name": "PREMIUM",
       "price": 10,
       "currency": "USD"
     }

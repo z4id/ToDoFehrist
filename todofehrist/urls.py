@@ -1,9 +1,20 @@
+"""
+NAME
+    todofehrist.urls
+
+DESCRIPTION
+    Contain urls for ToDoFehrist app endpoints
+
+AUTHOR
+    Zaid Afzal
+"""
 from django.urls import path
 # from django.conf.urls import handler500
 from django.conf import settings
 from django.views.decorators.cache import cache_page
 
-from todofehrist.views import AppUserView, activate_account, AppUserLoginView, ReportView, AppUserResetPasswordView, \
+from todofehrist.views import AppUserView, activate_account, \
+    AppUserLoginView, ReportView, AppUserResetPasswordView, \
     TaskView, TaskUpdateView, TaskMediaFileView
 # from todofehrist.views import SocialLoginView
 from todofehrist.exceptions import HTTPStatusCodeHandler

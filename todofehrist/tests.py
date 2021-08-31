@@ -1,3 +1,9 @@
-from django.test import TestCase
+"""
+NAME
+    todofehrist.tests.py
+
+DESCRIPTION
+    Contains Unit Tests for Python functions.
+"""
 
 # Create your tests here.

@@ -1,29 +1,51 @@
+"""
+NAME
+    todofehrist.utility
+
+DESCRIPTION
+    Contains utility methods to support todofehrist.views
+"""
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.db.models.functions import ExtractWeekDay, TruncDate
+from django.db.models import Count, Avg, Max
 
 from rest_framework.response import Response
 from rest_framework import status
 
 from todofehrist.models import Task, AppUserLogin
-from django.db.models.functions import ExtractWeekDay, TruncDate
-from django.db.models import Count, Avg, Max
 
 
 def send_email(subject, body, to_):
+    """
+    This method will send an email provided subject
+    body text and list of recipients
+    """
 
     new_email = EmailMessage(subject, body, to=to_)
     new_email.send()
 
 
 def account_token_gen():
+    """
+    This method will return a generator class, which
+    can generate and verify a token.
+    """
     return PasswordResetTokenGenerator()
 
 
 def send_activation_email(app_user, request):
+    """
+    This method will send an email to user when registered first
+    time, containing an email verification link.
+    Args
+        - app_user
+        - request
+    """
     subject = 'ToDoFehrist - Activate Your Account'
     body = render_to_string('email_verification.html', {
         "domain": get_current_site(request).domain,
@@ -35,6 +57,10 @@ def send_activation_email(app_user, request):
 
 
 def send_forgot_password_email(app_user):
+    """
+    This method is responsible to send forgot password email
+    when a user requests it.
+    """
     subject = 'ToDoFehrist - Forgot Password Request'
     body = render_to_string('forgot_password_email.html', {
         "token": account_token_gen().make_token(app_user)
@@ -43,7 +69,11 @@ def send_forgot_password_email(app_user):
     send_email(subject, body, [app_user.email])
 
 
-def login_required(f):
+def login_required(func_handler):
+    """
+    This is implementation of a decorator which will be used
+    by todofehrist.views to authenticate a user on each request.
+    """
     def wrap(self, request, user=0, *args, **kwargs):
 
         user = None
@@ -52,16 +82,19 @@ def login_required(f):
             user_login = AppUserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
             user = user_login.user
 
-        except Exception as e:
+        except Exception as execption_:
             return Response({"msg": "Resource Access Not Allowed. Login To Continue..."},
                             status=status.HTTP_401_UNAUTHORIZED)
 
-        return f(self, request, user, *args, **kwargs)
+        return func_handler(self, request, user, *args, **kwargs)
 
     return wrap
 
 
 def gen_report_tasks_status(user):
+    """
+    This method generates a report for a user stating its tasks summary.
+    """
     result = Task.objects.filter(user=user.id).values(
         'completion_status').annotate(total=Count('completion_status')).order_by('total')
     dict_ = {"total": 0, "complete": 0, "incomplete": 0}
@@ -80,6 +113,9 @@ def gen_report_tasks_status(user):
 
 
 def gen_report_tasks_completion_avg(user):
+    """
+    This method returns average completion of user's tasks
+    """
     result = Task.objects.filter(user=user.id, completion_status=0).values(
         date=TruncDate('completion_datetime')).annotate(avg=Count('date'))
 
@@ -87,13 +123,18 @@ def gen_report_tasks_completion_avg(user):
 
 
 def gen_report_incomplete_tasks_count(user):
-
+    """
+    This method will return count of incomplete/pending tasks by user.
+    """
     tasks_count = Task.objects.filter(user=user.id, completion_status=0).count()
 
     return {"incomplete_tasks_count": tasks_count}
 
 
 def gen_report_max_completion_count_day_wise(user):
+    """
+    This method will return daywise count of completed tasks by any user
+    """
     result = Task.objects.filter(user=user.id, completion_status=1).values(
         date=TruncDate('completion_datetime')).annotate(max=Max('date'))
 
@@ -101,12 +142,17 @@ def gen_report_max_completion_count_day_wise(user):
 
 
 def gen_report_max_created_count_day_wise(user):
+    """
+    This method will return weekday wise data when user created more number of tasks
+    than other days
+    """
     result = Task.objects.filter(user=user.id).annotate(
-        weekday=ExtractWeekDay('created_datetime')).values('weekday').annotate(tasks_count=Count('weekday'))
+        weekday=ExtractWeekDay('created_datetime')).values('weekday').annotate(
+        tasks_count=Count('weekday'))
 
     day_abbr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-    dict_ = dict()
+    dict_ = {}
 
     for item in result:
         day_name = day_abbr[item['weekday'] - 1]  # ExtractWeekDay method counts 1 as Sunday
@@ -115,7 +161,9 @@ def gen_report_max_created_count_day_wise(user):
     return dict_
 
 
-reports_config_ = {"tasks-status": gen_report_tasks_status, "tasks-completion-avg": gen_report_tasks_completion_avg,
+# this dictionary contains reference to method related to specific report generation
+reports_config_ = {"tasks-status": gen_report_tasks_status,
+                   "tasks-completion-avg": gen_report_tasks_completion_avg,
                    "incomplete-tasks-count": gen_report_incomplete_tasks_count,
                    "max-completion-count-day-wise": gen_report_max_completion_count_day_wise,
                    "max-created-count-day-wise": gen_report_max_created_count_day_wise
@@ -123,6 +171,9 @@ reports_config_ = {"tasks-status": gen_report_tasks_status, "tasks-completion-av
 
 
 def reports_handler(report_name, user):
+    """
+    This method is responsible to return a generated report when requested by view.
+    """
 
     report_handler = reports_config_.get(report_name, None)
     error = None
