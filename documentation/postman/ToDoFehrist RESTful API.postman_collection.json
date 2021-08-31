@@ -100,7 +100,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"new_password\": \"my_password1\",\n    \"reset_token\": \"as111c-5f07b01bf4526f8529ab2d87e58f586d\"\n}",
+					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"new_password\": \"my_password1\",\n    \"reset_token\": \"as6i2p-95fb805d65e00b3244bb274a0ba26da1\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -126,15 +126,61 @@
 			"name": "Logout",
 			"request": {
 				"method": "DELETE",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{TOKEN}}",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": "{{HOST}}api/v1/auth",
+					"raw": "{{HOST}}/api/v1/auth",
 					"host": [
-						"{{HOST}}api"
+						"{{HOST}}"
 					],
 					"path": [
+						"api",
 						"v1",
 						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "FaceBook OAuth",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Vary",
+						"value": "Accept",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"provider\": \"\",\n    \"access_token\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{HOST}}/api/v1/oauth",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"oauth"
 					]
 				}
 			},
@@ -178,7 +224,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"Task5\",\n    \"description\": \"Description4\",\n    \"due_datetime\": \"2021-08-27T00:00:00.000Z\",\n    \"completion_datetime\": null\n}",
+					"raw": "{\n    \"title\": \"Task5\",\n    \"description\": \"Description4\",\n    \"due_datetime\": \"2021-08-30T12:13:14.000Z\",\n    \"completion_datetime\": null\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -218,7 +264,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/3",
+					"raw": "{{HOST}}/api/v1/tasks/1",
 					"host": [
 						"{{HOST}}"
 					],
@@ -226,7 +272,7 @@
 						"api",
 						"v1",
 						"tasks",
-						"3"
+						"1"
 					]
 				}
 			},
@@ -253,7 +299,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/2",
+					"raw": "{{HOST}}/api/v1/tasks/1",
 					"host": [
 						"{{HOST}}"
 					],
@@ -261,7 +307,7 @@
 						"api",
 						"v1",
 						"tasks",
-						"2"
+						"1"
 					],
 					"query": [
 						{
@@ -286,7 +332,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/3",
+					"raw": "{{HOST}}/api/v1/tasks/1",
 					"host": [
 						"{{HOST}}"
 					],
@@ -294,7 +340,7 @@
 						"api",
 						"v1",
 						"tasks",
-						"3"
+						"1"
 					]
 				}
 			},
@@ -392,7 +438,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/1/files/2",
+					"raw": "{{HOST}}/api/v1/tasks/1/files/1",
 					"host": [
 						"{{HOST}}"
 					],
@@ -402,7 +448,7 @@
 						"tasks",
 						"1",
 						"files",
-						"2"
+						"1"
 					]
 				}
 			},
@@ -420,7 +466,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/1/files/3",
+					"raw": "{{HOST}}/api/v1/tasks/1/files/1",
 					"host": [
 						"{{HOST}}"
 					],
@@ -430,7 +476,7 @@
 						"tasks",
 						"1",
 						"files",
-						"3"
+						"1"
 					]
 				}
 			},
@@ -600,6 +646,15 @@
 						}
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}

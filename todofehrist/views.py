@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, \
     TaskSerializer, TaskMediaFilesSerializer
 # from todofehrist.serializers import SocialSerializer
-from todofehrist.models import AppUser, Task, TaskMediaFiles
+from todofehrist.models import AppUser, Task, TaskMediaFiles, AppUserLogin
 from todofehrist.utility import send_activation_email, account_token_gen, \
     login_required, reports_handler, send_forgot_password_email
 
@@ -95,6 +95,16 @@ class AppUserLoginView(APIView):
 
     """
 
+    @login_required
+    def delete(self, request, user):
+        """
+        Logs out a user
+        """
+        app_user_login = AppUserLogin.objects.get(user=user.id)
+        app_user_login.delete()
+
+        return Response({"msg": "Logged Out Successfully"}, status=status.HTTP_200_OK)
+
     def post(self, request):
         """
         POST request handler
@@ -125,21 +135,32 @@ class AppUserLoginView(APIView):
 
         token = account_token_gen().make_token(app_user)
 
-        serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
+        try:
+            app_user_login = AppUserLogin.objects.get(user=app_user.id)
 
-        if not serializer_.is_valid():
-            msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
-            logging.exception(msg)
-            return Response({"msg": "Invalid Email/Password. Try Again."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            app_user_login.token = token
+            app_user_login.save()
 
-        appuser_login = serializer_.save()
+            return Response({"token": token},
+                            status=status.HTTP_200_OK)
 
-        msg = "200 - AppUserLoginView: UserLogged In Successfully."
-        logging.info(msg)
+        except AppUserLogin.DoesNotExist:
 
-        return Response({"token": serializer_.data['token']},
-                        status=status.HTTP_200_OK)
+            serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
+
+            if not serializer_.is_valid():
+                msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
+                logging.exception(msg)
+                return Response({"msg": "Invalid Email/Password. Try Again."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            appuser_login = serializer_.save()
+
+            msg = "200 - AppUserLoginView: UserLogged In Successfully."
+            logging.info(msg)
+
+            return Response({"token": serializer_.data['token']},
+                            status=status.HTTP_200_OK)
 
 
 class AppUserResetPasswordView(APIView):

@@ -95,7 +95,7 @@ class AppUserLogin(models.Model):
     DESCRIPTION
         Custom Django Model for Login/Auth handling of AppUser.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False, unique=True)
     token = models.CharField(max_length=256, null=False)
     created_at = models.DateTimeField(default=datetime.datetime.utcnow())
     expire_at = models.DateTimeField(null=True)
