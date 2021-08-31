@@ -9,17 +9,17 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import os
 import enum
+import logging
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
-import os
-import logging.handlers
 
-# Implement Logging Handler
+# Get Logging Variable via Environment Variable
 LOG_FILE = os.environ.get('LOG_FILE', 'todofehrist_api.log')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 
-# Configuration
+# Logging Configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -42,7 +42,7 @@ LOGGING = {
     "formatters": {
         "app": {
             "format": (
-                u"%(asctime)s [%(levelname)-8s] "
+                "%(asctime)s [%(levelname)-8s] "
                 "(%(module)s.%(funcName)s) %(message)s"
             ),
             "datefmt": "%Y-%m-%d %H:%M:%S",
@@ -63,6 +63,9 @@ ENVIRONMENT_STAGE = os.environ.get('ENV', None)
 
 
 class EnvironmentStages(enum.Enum):
+    """
+    This class defines Enums for deployment stages
+    """
     DEV = "DEV"
     QA = "QA"
     UAT = "UAT"
@@ -70,21 +73,29 @@ class EnvironmentStages(enum.Enum):
 
     @classmethod
     def get_all_env_stage_names(cls):
+        """
+        return: all EnvironmentStages enum values in a list
+        """
         return cls.__members__
 
     @classmethod
     def has_stage_name(cls, stage_name):
+        """
+        return True if a provided stage value exists in defined enums
+        """
         return stage_name in cls.__members__
 
 
 if not (ENVIRONMENT_STAGE and EnvironmentStages.has_stage_name(ENVIRONMENT_STAGE)):
     raise Exception("ENVIRONMENT not set properly. Check your Environment Variable 'ENV'. "
-                    "Possible 'ENV' Stages: {0}".format(" or ".join(EnvironmentStages.get_all_env_stage_names())))
+                    "Possible 'ENV' Stages: {0}".format(" or ".join(
+                        EnvironmentStages.get_all_env_stage_names())))
 
 if ENVIRONMENT_STAGE == EnvironmentStages.DEV.value:
     SECRET_KEY = get_random_secret_key() if not SECRET_KEY else SECRET_KEY
 elif not SECRET_KEY:
-    raise Exception("SECRET_KEY is not set in settings.py. Check your Environment Variable 'SECRET_KEY'")
+    raise Exception("SECRET_KEY is not set in settings.py. "
+                    "Check your Environment Variable 'SECRET_KEY'")
 
 DEBUG_PROPAGATE_EXCEPTIONS = False
 
@@ -96,6 +107,9 @@ else:
     DEBUG = False
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
+ENV_ALLOWED_HOST = os.environ.get('ALLOWED_HOST', None)
+if ENV_ALLOWED_HOST:
+    ALLOWED_HOSTS = [ENV_ALLOWED_HOST]
 
 # Application definition
 
@@ -151,26 +165,35 @@ WSGI_APPLICATION = 'emumbaproject.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 class SupportedDatabases(enum.Enum):
-    sqlite = 'sqlite'
-    postgresql = 'postgresql'
+    """
+    This class defines enums for supported databases by application
+    """
+    SQLITE = 'SQLITE'
+    POSTGRESQL = 'POSTGRESQL'
 
     @classmethod
     def has_db_key(cls, db_name):
+        """
+        return: if a provided database name is defined in SupportedDatabases Enum
+        """
         return db_name in cls.__members__
 
     @classmethod
     def get_all_db_names(cls):
+        """
+        return: all supported databases names defined as ENum values
+        """
         return cls.__members__
 
 
-db_configs = dict()
+db_configs = {}
 
 DATABASE = os.environ.get('DATABASE', None)
 if not (DATABASE and SupportedDatabases.has_db_key(DATABASE)):
     raise Exception("DATABASE is not set properly. Set Environment Variable 'DATABASE' "
                     "to {0}".format(' or '.join(SupportedDatabases.get_all_db_names())))
 
-if DATABASE == SupportedDatabases.postgresql.value:
+if DATABASE == SupportedDatabases.POSTGRESQL.value:
     DB_HOST = os.environ.get('DB_HOST', None)
     DB_NAME = os.environ.get('DB_NAME', None)
     DB_USER = os.environ.get('DB_USER', None)
@@ -194,16 +217,16 @@ if DATABASE == SupportedDatabases.postgresql.value:
             }
     }
 
-    db_configs[SupportedDatabases.postgresql.value] = postgresql_config
+    db_configs[SupportedDatabases.POSTGRESQL.value] = postgresql_config
 
-if DATABASE == SupportedDatabases.sqlite.value:
+if DATABASE == SupportedDatabases.SQLITE.value:
 
     sqlite_config = {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-    db_configs[SupportedDatabases.sqlite.value] = sqlite_config
+    db_configs[SupportedDatabases.SQLITE.value] = sqlite_config
 
 DATABASES = {
     'default': db_configs[DATABASE]
@@ -263,9 +286,9 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT', None)
 EMAIL_USE_TLS = True
 
 if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD or not EMAIL_PORT:
-    exception_message = "EMAIL CREDENTIALS are not properly set."
-    logging.exception(exception_message)
-    raise Exception(exception_message)
+    EXCEPTION_MESSAGE = "EMAIL CREDENTIALS are not properly set."
+    logging.exception(EXCEPTION_MESSAGE)
+    raise Exception(EXCEPTION_MESSAGE)
 
 LOGIN_TOKEN_EXPIRY_TIME = 3600  # seconds
 REPORT_CACHE_TIME = 15*60  # seconds, 15 minutes
@@ -312,7 +335,7 @@ BROKER_URL = 'redis://127.0.0.1:6379'
 # REST_FRAMEWORK = {
 #     'DEFAULT_AUTHENTICATION_CLASSES': (
 #         # OAuth
-#         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',  # django-oauth-toolkit >= 1.0.0
+#         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
 #         'rest_framework_social_oauth2.authentication.SocialAuthentication',
 #     )
 # }
