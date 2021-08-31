@@ -1,16 +1,40 @@
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
-from django.urls import reverse
-import json
+"""
+NAME
+    test_views.py
 
-from todofehrist.models import AppUser, UserSubscriptionType, AppUserLogin
+DESCRIPTION
+    Contains unit tests to test todofehrist app's views
+    ===================================================
+
+AUTHOR
+    Zaid Afzal
+"""
+import json
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase, APIClient
+
 from todofehrist.enums import UserSubscriptionTypesEnum
+from todofehrist.models import AppUser, UserSubscriptionType, AppUserLogin
 
 
 class SignupTest(APITestCase):
+    """
+    NAME
+        SignupTest
+
+    DESCRIPTION
+        Contains unit tests for register route (Sing up process by email)
+    """
 
     @classmethod
     def setUpClass(cls):
+        """
+        This method is inherited by APITestCase Class,
+        used to setup basic/common variables across
+        all test cases
+        """
+
         super().setUpClass()
         cls.client = APIClient()
         cls.register_url = reverse('register')
@@ -19,6 +43,9 @@ class SignupTest(APITestCase):
         pass
 
     def test_invalid_email_address(self):
+        """
+        This method tests register view with invalid email address.
+        """
 
         signup_dict = {"email": "my_invalid_email_address.com", "password": "my_password"}
 
@@ -29,6 +56,9 @@ class SignupTest(APITestCase):
         self.assertEqual(response_data.get("email", None), ["Enter a valid email address."])
 
     def test_valid_email_address(self):
+        """
+        This method contains test for register view with a valid email address.
+        """
 
         signup_dict = {"email": "abc@gmail.com", "password": "my_password"}
 
@@ -40,9 +70,22 @@ class SignupTest(APITestCase):
 
 
 class LoginTest(APITestCase):
+    """
+    NAME
+        LoginTest
+
+    DESCRIPTION
+        Contains unit tests for auth route (Sing up process by email)
+    """
 
     @classmethod
     def setUpClass(cls):
+        """
+        This method is inherited by APITestCase Class,
+        used to setup basic/common variables across
+        all test cases
+        """
+
         super().setUpClass()
         cls.client = APIClient()
         cls.login_url = reverse('login')
@@ -53,7 +96,7 @@ class LoginTest(APITestCase):
         app_user.set_password(self.login_credentials["password"])
 
         user_subscription_type = UserSubscriptionType.objects.get_or_create(
-            name=UserSubscriptionTypesEnum.Freemium.value)[0]
+            name=UserSubscriptionTypesEnum.FREEMIUM.value)[0]
         app_user.user_subscription_type = user_subscription_type
 
         app_user.is_email_verified = True
@@ -63,6 +106,9 @@ class LoginTest(APITestCase):
         self.app_user = app_user
 
     def test_invalid_credentials(self):
+        """
+        This method contains test for auth view with an invalid email address.
+        """
 
         login_dict = {"email": "invalid_email@gmail.com", "password": "my_password"}
 
@@ -73,6 +119,9 @@ class LoginTest(APITestCase):
         self.assertEqual(response_data.get("msg", None), "Email Address doesn't exist.")
 
     def test_valid_credentials(self):
+        """
+        This method contains test for auth view with a valid email/password combination.
+        """
 
         login_dict = {"email": "valid_email@gmail.com", "password": "my_password"}
 
@@ -80,4 +129,5 @@ class LoginTest(APITestCase):
         response_data = json.loads(response.content)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_data["token"], AppUserLogin.objects.get(user=self.app_user.id).token)
+        expected_token = AppUserLogin.objects.get(user=self.app_user.id).token
+        self.assertEqual(response_data["token"], expected_token)
