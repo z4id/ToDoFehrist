@@ -9,7 +9,7 @@ API Documentation: http://server_ip/doc/
 
         1: ENV = 'DEV' or 'QA' or 'UAT' or 'PROD'
         2: SECRET_KEY = 'Your_Django_SECRET_KEY'
-        3: DATABASE = 'sqlite' or 'postgresql'
+        3: DATABASE = 'SQLITE' or 'POSTGRESQL'
         For PostgreSQL DB setup only:
             3.1: DB_HOST = 'database_host_name'
             3.2: DB_NAME = 'database_name'
@@ -22,6 +22,11 @@ API Documentation: http://server_ip/doc/
         If any environment variable isn't set, then an exception will be thrown.
     - Run Tests
         python manage.py test
+    - RUN Pylint
+        pylint $(git ls-files '*.py')
+            Your code has been rated at 6.74/10 
+        pylint --load-plugins pylint_django $(git ls-files '*.py')c
+            Your code has been rated at 9.43/10 
     - Run Application
         python manage.py makemigrations
         python manage.py migrate

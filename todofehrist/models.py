@@ -1,3 +1,13 @@
+"""
+NAME
+    todofehrist.models.py
+
+DESCRIPTION
+    Contains all models for todofehrist application
+
+AUTHOR
+    Zaid Afzal
+"""
 import datetime
 
 from django.db import models
@@ -7,12 +17,26 @@ from todofehrist.enums import UserSubscriptionTypesEnum
 
 
 class UserSubscriptionType(models.Model):
+    """
+    NAME
+        UserSubscriptionType
+
+    DESCRIPTION
+        Custom Django Model for SubscriptionType of User.
+    """
     name = models.CharField(max_length=30, unique=True, null=False)
     price = models.IntegerField(default=0, null=False)
     currency = models.CharField(max_length=20, default='USD')
 
 
 class AppUser(AbstractUser):
+    """
+        NAME
+            AppUser
+
+        DESCRIPTION
+            Custom Django Model for User.
+    """
 
     is_staff = None
     is_superuser = None
@@ -22,15 +46,34 @@ class AppUser(AbstractUser):
     updated_datetime = models.DateTimeField(null=True)
 
     class Meta:
+        """
+        NAME
+            Meta
+
+        DESCRIPTION
+
+        """
         db_table = 'AppUser'
 
     class AppUserManager(BaseUserManager):
+        """
+        NAME
+            AppUserManager
+
+        DESCRIPTION
+
+        """
 
         def create_app_user(self, email_address=None, password=None):
+            """
+            This method creates an object of AppUser when validated data provided
+            from Models' serializer.
+            """
             if not email_address or not password:
                 raise ValueError("Empty Signup Credentials.")
 
-            result_ = UserSubscriptionType.objects.get_or_create(name=UserSubscriptionTypesEnum.Freemium.value)
+            result_ = UserSubscriptionType.objects.get_or_create(
+                        name=UserSubscriptionTypesEnum.FREEMIUM.value)
             user_subscription_type = result_[0]
 
             email_address = self.normalize_email(email_address)
@@ -45,21 +88,46 @@ class AppUser(AbstractUser):
 
 
 class AppUserLogin(models.Model):
+    """
+    NAME
+        AppUserLogin
+
+    DESCRIPTION
+        Custom Django Model for Login/Auth handling of AppUser.
+    """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     token = models.CharField(max_length=256, null=False)
     created_at = models.DateTimeField(default=datetime.datetime.utcnow())
     expire_at = models.DateTimeField(null=True)
 
     def save(self, *args, **kwargs):
+        """
+        This method sets login/auth token's expiry datetime using created_at
+        & and time margin to expire set in projects setting.py
+        """
         # self.expire_at = self.created_at
         # self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME.seconds
         super(AppUserLogin, self).save(*args, **kwargs)
 
     class Meta:
+        """
+        NAME
+            Meta
+
+        DESCRIPTION
+
+        """
         db_table = 'AppUserLogin'
 
 
 class UserQuotaManagement(models.Model):
+    """
+    NAME
+        UserQuotaManagement
+
+    DESCRIPTION
+        Custom Django Model for logging application usage for AppUser.
+    """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     total_tasks = models.IntegerField(default=0)
     downloaded_file_count = models.IntegerField(default=0)
@@ -69,7 +137,15 @@ class UserQuotaManagement(models.Model):
 
 
 class UserSubscriptionLimits(models.Model):
-    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE, null=False)
+    """
+    NAME
+        UserSubscriptionLimits
+
+    DESCRIPTION
+
+    """
+    user_subscription_type = models.ForeignKey(UserSubscriptionType,
+                                               on_delete=models.CASCADE, null=False)
     max_allowed_tasks = models.IntegerField(default=0)
     max_allowed_files = models.IntegerField(default=0)
     allowed_files_per_task = models.IntegerField(default=0)
@@ -80,6 +156,13 @@ class UserSubscriptionLimits(models.Model):
 
 
 class Task(models.Model):
+    """
+    NAME
+        Task
+
+    DESCRIPTION
+
+    """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     title = models.CharField(max_length=50, null=False)
     description = models.CharField(max_length=300)
@@ -112,6 +195,13 @@ class Task(models.Model):
 
 
 class TaskMediaFiles(models.Model):
+    """
+    NAME
+        TaskMediaFiles
+
+    DESCRIPTION
+
+    """
     task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=50)
     file = models.FileField(null=False)
