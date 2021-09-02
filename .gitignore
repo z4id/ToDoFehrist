@@ -133,3 +133,8 @@ dmypy.json
 
 # local virtual environment
 env_todofehrist/
+
+# docker volume
+postgres_data/
+# static media files
+app/mediafiles/
