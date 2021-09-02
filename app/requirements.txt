@@ -6,3 +6,4 @@ redis
 pylint
 pylint-django
 google-auth
+psycopg2-binary

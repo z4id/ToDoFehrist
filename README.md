@@ -13,7 +13,14 @@ API Documentation: http://server_ip/doc/
         docker-compose build
         docker-compose up -d
 
+        Build the new image and spin up the two containers: 
+        docker-compose up -d --build
+
         Goto to your ALLOWED_HOST_Value:8000/doc/
+
+        docker-compose exec db psql --username=$DB_USER --dbname=$DB_NAME
+
+        docker volume inspect todofehrist_postgres_data
 
     - Set Environment Variables
         source env_vars.rc
