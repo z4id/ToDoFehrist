@@ -1,0 +1,75 @@
+[
+  {
+    "model": "todofehrist.usersubscriptiontype",
+    "pk": 1,
+    "fields": {
+      "name": "FREEMIUM",
+      "price": 0,
+      "currency": "USD"
+    }
+  },
+  {
+    "model": "todofehrist.usersubscriptiontype",
+    "pk": 2,
+    "fields": {
+      "name": "PREMIUM",
+      "price": 10,
+      "currency": "USD"
+    }
+  },
+  {
+    "model": "todofehrist.usersubscriptionlimits",
+    "pk": 1,
+    "fields": {
+      "user_subscription_type": 1,
+      "max_allowed_tasks": 5,
+      "max_allowed_files" : 0,
+      "allowed_files_per_task": 0,
+      "max_file_size": 0,
+      "max_downloads_per_day": 0,
+      "max_uploads_per_day": 0,
+      "permanent_deletion_time": 0
+    }
+  },
+  {
+    "model": "todofehrist.appuser",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$260000$Xl8VobNXBdRNllBTxSk5Gw$u6FLccvMDnu8FHCybn8UjGIHgXyv1qvxWk7EcVA/BHQ=",
+      "last_login": null,
+      "username": "zaid.afzal.cv@gmail.com",
+      "first_name": "",
+      "last_name": "",
+      "email": "zaid.afzal.cv@gmail.com",
+      "is_active": true,
+      "date_joined": "2021-08-29T12:32:43.259Z",
+      "user_subscription_type": 1,
+      "is_email_verified": true,
+      "updated_datetime": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "todofehrist.appuserlogin",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "token": "as57i5-c0659c05e5653ffdc5fd9371a2dee4e1",
+      "created_at": "2021-08-29T12:46:50.637Z",
+      "expire_at": "2021-08-29T12:46:50.637Z"
+    }
+  },
+  {
+    "model": "todofehrist.userquotamanagement",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "total_tasks": 0,
+      "downloaded_file_count": 0,
+      "last_downloaded_datetime": null,
+      "uploaded_files_count": 0,
+      "last_uploaded_datetime": null
+    }
+  }
+]
