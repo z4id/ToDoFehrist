@@ -111,10 +111,6 @@ ENV_ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', None)
 if ENV_ALLOWED_HOSTS:
     ALLOWED_HOSTS = [host.strip() for host in ENV_ALLOWED_HOSTS.split(',') if host]
 
-
-print(ALLOWED_HOSTS)
-
-
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", '')
 
 # Application definition

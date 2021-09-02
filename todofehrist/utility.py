@@ -5,6 +5,7 @@ NAME
 DESCRIPTION
     Contains utility methods to support todofehrist.views
 """
+import logging
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -194,16 +195,13 @@ def authenticate_oauth_token(provider, token):
     idinfo = None
 
     if provider != "google":
-        print("not google")
         return idinfo
 
     try:
         # Specify the CLIENT_ID of the app that accesses the backend:
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_OAUTH_CLIENT_ID)
-    except Exception as e:
+    except Exception as exception_:
         # Invalid token
-        print(e)
-
-    print(idinfo)
+        logging.exception(exception_)
 
     return idinfo
