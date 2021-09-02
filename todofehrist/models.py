@@ -43,6 +43,7 @@ class AppUser(AbstractUser):
 
     user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE)
     is_email_verified = models.BooleanField(default=False)
+    is_oauth = models.BooleanField(default=False)
     updated_datetime = models.DateTimeField(null=True)
 
     class Meta:
@@ -80,6 +81,26 @@ class AppUser(AbstractUser):
             app_user = self.model(email=email_address, username=email_address)
             app_user.set_password(password)
             app_user.user_subscription_type = user_subscription_type
+            app_user.save()
+
+            return app_user
+
+        def create_app_user_via_oauth(self, email_address=None):
+            """
+            This method creates an object of AppUser when validated data provided
+            from Models' serializer.
+            """
+            if not email_address:
+                raise ValueError("Empty Signup Credentials.")
+
+            result_ = UserSubscriptionType.objects.get_or_create(
+                        name=UserSubscriptionTypesEnum.FREEMIUM.value)
+            user_subscription_type = result_[0]
+
+            app_user = self.model(email=email_address, username=email_address)
+            app_user.user_subscription_type = user_subscription_type
+            app_user.is_oauth = True
+            app_user.is_email_verified = True
             app_user.save()
 
             return app_user
