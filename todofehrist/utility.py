@@ -5,6 +5,8 @@ NAME
 DESCRIPTION
     Contains utility methods to support todofehrist.views
 """
+import logging
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
@@ -18,6 +20,9 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from todofehrist.models import Task, AppUserLogin
+
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 def send_email(subject, body, to_):
@@ -184,3 +189,19 @@ def reports_handler(report_name, user):
         error = 'InValidReportName'
 
     return report_data, error
+
+
+def authenticate_oauth_token(provider, token):
+    idinfo = None
+
+    if provider != "google":
+        return idinfo
+
+    try:
+        # Specify the CLIENT_ID of the app that accesses the backend:
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_OAUTH_CLIENT_ID)
+    except Exception as exception_:
+        # Invalid token
+        logging.exception(exception_)
+
+    return idinfo

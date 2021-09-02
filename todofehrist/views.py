@@ -19,18 +19,11 @@ from rest_framework.response import Response
 
 from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, \
     TaskSerializer, TaskMediaFilesSerializer
-# from todofehrist.serializers import SocialSerializer
 from todofehrist.models import AppUser, Task, TaskMediaFiles, AppUserLogin
 from todofehrist.utility import send_activation_email, account_token_gen, \
-    login_required, reports_handler, send_forgot_password_email
+    login_required, reports_handler, send_forgot_password_email, authenticate_oauth_token
 
-# from rest_framework import generics, permissions
-# from requests.exceptions import HTTPError
-#
-# from social_django.utils import load_strategy, load_backend
-# from social_core.backends.oauth import BaseOAuth2
-# from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
-
+from todofehrist.serializers import SocialAuthSerializer
 
 class AppUserView(APIView):
     """
@@ -113,7 +106,7 @@ class AppUserLoginView(APIView):
         app_user = None
 
         try:
-            app_user = AppUser.objects.get(email=request.data.get('email', ''))
+            app_user = AppUser.objects.get(email=request.data.get('email', ''), is_oauth=0)
 
         except AppUser.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
@@ -132,6 +125,68 @@ class AppUserLoginView(APIView):
             logging.exception(msg)
             return Response({"msg": "Email/Password pair isn't valid."},
                             status=status.HTTP_400_BAD_REQUEST)
+
+        token = account_token_gen().make_token(app_user)
+
+        try:
+            app_user_login = AppUserLogin.objects.get(user=app_user.id)
+
+            app_user_login.token = token
+            app_user_login.save()
+
+            return Response({"token": token},
+                            status=status.HTTP_200_OK)
+
+        except AppUserLogin.DoesNotExist:
+
+            serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
+
+            if not serializer_.is_valid():
+                msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
+                logging.exception(msg)
+                return Response({"msg": "Invalid Email/Password. Try Again."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            appuser_login = serializer_.save()
+
+            msg = "200 - AppUserLoginView: UserLogged In Successfully."
+            logging.info(msg)
+
+            return Response({"token": serializer_.data['token']},
+                            status=status.HTTP_200_OK)
+
+
+class SocialAuthLogin(APIView):
+    """
+    NAME
+        SocialAuthLogin
+
+    DESCRIPTION
+
+    """
+
+    def post(self, request):
+        """
+        POST request handler
+        """
+
+        social_serializer = SocialAuthSerializer(data=request.data)
+
+        if not social_serializer.is_valid():
+            return Response(social_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        social_user_info = authenticate_oauth_token(request.data["provider"], request.data["token"])
+
+        if not social_user_info:
+            return Response({"msg": "Authentication Failed."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            app_user = AppUser.objects.get(email=social_user_info["email"])
+
+        except AppUser.DoesNotExist:
+
+            app_user = AppUser.objects.create_app_user_via_oauth(
+                email_address=social_user_info)
+            app_user.save()
 
         token = account_token_gen().make_token(app_user)
 
@@ -437,62 +492,3 @@ class ReportView(APIView):
             return Response(report_data, status=status.HTTP_200_OK)
 
         return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
-
-
-# class SocialLoginView(generics.GenericAPIView):
-#     """Auth/Login using Facebook"""
-#     serializer_class = SocialSerializer
-#     permission_classes = [permissions.AllowAny]
-#
-#     def post(self, request):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         provider = serializer.data.get('provider', None)
-#         strategy = load_strategy(request)
-#
-#         try:
-#             backend = load_backend(strategy=strategy, name=provider,
-#                                    redirect_uri=None)
-#
-#         except MissingBackend:
-#             return Response({'error': 'Please provide a valid provider'},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#         try:
-#             if isinstance(backend, BaseOAuth2):
-#                 access_token = serializer.data.get('access_token')
-#             user = backend.do_auth(access_token)
-#         except HTTPError as error:
-#             return Response({
-#                 "error": {
-#                     "access_token": "Invalid token",
-#                     "details": str(error)
-#                 }
-#             }, status=status.HTTP_400_BAD_REQUEST)
-#         except AuthTokenError as error:
-#             return Response({
-#                 "error": "Invalid credentials",
-#                 "details": str(error)
-#             }, status=status.HTTP_400_BAD_REQUEST)
-#
-#         try:
-#             app_user = backend.do_auth(access_token, user=user)
-#
-#         except HTTPError as error:
-#             return Response({
-#                 "error": "invalid token",
-#                 "details": str(error)
-#             }, status=status.HTTP_400_BAD_REQUEST)
-#
-#         except AuthForbidden as error:
-#             return Response({
-#                 "error": "invalid token",
-#                 "details": str(error)
-#             }, status=status.HTTP_400_BAD_REQUEST)
-#
-#         if app_user:
-#
-#             response = {
-#                 "email": app_user.email,
-#                 "token": account_token_gen().make_token(app_user)
-#             }
-#             return Response(response, status=status.HTTP_200_OK)
