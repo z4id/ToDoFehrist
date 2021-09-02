@@ -1,9 +1,9 @@
-export ALLOWED_HOST='127.0.0.1'
 export ENV='DEV'
+export ALLOWED_HOSTS='127.0.0.1,localhost'
+export SECRET_KEY=''
 export DATABASE='SQLITE'
 export EMAIL_HOST='smtp.gmail.com'
 export EMAIL_HOST_USER=''
 export EMAIL_HOST_PASSWORD=''
 export EMAIL_PORT=587
-export SOCIAL_AUTH_FACEBOOK_KEY=
-export SOCIAL_AUTH_FACEBOOK_SECRET=''
+export GOOGLE_OAUTH_CLIENT_ID=''
