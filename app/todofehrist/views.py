@@ -12,6 +12,7 @@ AUTHOR
 import logging
 from django.http import HttpResponse, FileResponse
 from django.utils.http import urlsafe_base64_decode
+from django.core.paginator import Paginator, EmptyPage
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -308,14 +309,31 @@ class TaskView(APIView):
 
         search_term = request.GET.get('search', None)
 
+        page_num = int(self.request.GET.get("page_num", "1"))
+        page_size = int(self.request.GET.get("page_size", "5"))
+
         if search_term:
             tasks = Task.objects.filter(user=user.id, title__contains=search_term)
-            serializer_ = TaskSerializer(tasks, many=True)
-            return Response(serializer_.data, status=status.HTTP_200_OK)
+
+            try:
+                paginator = Paginator(tasks, page_size)
+                serializer_ = TaskSerializer(paginator.page(page_num), many=True, context={'request': request})
+
+                return Response(serializer_.data, status=status.HTTP_200_OK)
+
+            except EmptyPage:
+                return Response([], status=status.HTTP_400_BAD_REQUEST)
 
         tasks = Task.objects.filter(user=user.id)
-        serializer_ = TaskSerializer(tasks, many=True)
-        return Response(serializer_.data, status=status.HTTP_200_OK)
+
+        try:
+            paginator = Paginator(tasks, page_size)
+            serializer_ = TaskSerializer(paginator.page(page_num), many=True, context={'request': request})
+
+            return Response(serializer_.data, status=status.HTTP_200_OK)
+        except EmptyPage as e:
+            return Response([], status=status.HTTP_400_BAD_REQUEST)
+
 
     @login_required
     def post(self, request, user):

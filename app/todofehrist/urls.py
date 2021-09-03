@@ -51,4 +51,4 @@ urlpatterns = [
     path('api/v1/reports/', cache_page(settings.REPORT_CACHE_TIME)(ReportView.as_view())),
 ]
 
-handler500 = HTTPStatusCodeHandler.handler500
+# handler500 = HTTPStatusCodeHandler.handler500

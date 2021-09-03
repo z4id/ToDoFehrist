@@ -201,7 +201,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks",
+					"raw": "{{HOST}}/api/v1/tasks?page_num=1&page_size=10",
 					"host": [
 						"{{HOST}}"
 					],
@@ -209,6 +209,16 @@
 						"api",
 						"v1",
 						"tasks"
+					],
+					"query": [
+						{
+							"key": "page_num",
+							"value": "1"
+						},
+						{
+							"key": "page_size",
+							"value": "10"
+						}
 					]
 				}
 			},
@@ -335,7 +345,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/1",
+					"raw": "{{HOST}}/api/v1/tasks/2",
 					"host": [
 						"{{HOST}}"
 					],
@@ -343,7 +353,7 @@
 						"api",
 						"v1",
 						"tasks",
-						"1"
+						"2"
 					]
 				}
 			},
@@ -373,7 +383,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks?search=task",
+					"raw": "{{HOST}}/api/v1/tasks?search=task&page_num=1&page_size=2",
 					"host": [
 						"{{HOST}}"
 					],
@@ -386,6 +396,14 @@
 						{
 							"key": "search",
 							"value": "task"
+						},
+						{
+							"key": "page_num",
+							"value": "1"
+						},
+						{
+							"key": "page_size",
+							"value": "2"
 						}
 					]
 				}
