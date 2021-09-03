@@ -214,6 +214,16 @@ class Task(models.Model):
         else:
             raise Exception("User Quota for Task Creation Reached.")
 
+    def delete(self, *args, **kwargs):
+
+        result = UserQuotaManagement.objects.get_or_create(user=self.user)
+        quota_obj = result[0]
+
+        quota_obj.total_tasks -= 1
+        quota_obj.save()
+
+        super(Task, self).delete()
+
 
 class TaskMediaFiles(models.Model):
     """
