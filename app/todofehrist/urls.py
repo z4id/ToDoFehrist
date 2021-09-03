@@ -29,7 +29,7 @@ urlpatterns = [
     path('api/v1/auth', AppUserLoginView.as_view(), name='login'),
 
     # User Log Out
-    path('api/v1/auth/logout', AppUserLogoutView.as_view(), name='login'),
+    path('api/v1/auth/logout', AppUserLogoutView.as_view(), name='logout'),
 
     # User Forgot & Reset Password Request
     path('api/v1/auth/reset', AppUserResetPasswordView.as_view()),
