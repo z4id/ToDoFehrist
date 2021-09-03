@@ -32,6 +32,7 @@ def send_email(subject, body, to_):
     """
 
     new_email = EmailMessage(subject, body, to=to_)
+    new_email.content_subtype = 'html'
     new_email.send()
 
 
