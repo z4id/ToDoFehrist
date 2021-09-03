@@ -25,6 +25,7 @@ from todofehrist.utility import send_activation_email, account_token_gen, \
 
 from todofehrist.serializers import SocialAuthSerializer
 
+
 class AppUserView(APIView):
     """
     NAME
@@ -88,16 +89,6 @@ class AppUserLoginView(APIView):
 
     """
 
-    @login_required
-    def delete(self, request, user):
-        """
-        Logs out a user
-        """
-        app_user_login = AppUserLogin.objects.get(user=user.id)
-        app_user_login.delete()
-
-        return Response({"msg": "Logged Out Successfully"}, status=status.HTTP_200_OK)
-
     def post(self, request):
         """
         POST request handler
@@ -154,6 +145,26 @@ class AppUserLoginView(APIView):
 
             return Response({"token": serializer_.data['token']},
                             status=status.HTTP_200_OK)
+
+
+class AppUserLogoutView(APIView):
+    """
+    NAME
+        AppUserLogoutView
+
+    DESCRIPTION
+
+    """
+
+    @login_required
+    def post(self, request, user):
+        """
+        Logs out a user
+        """
+        app_user_login = AppUserLogin.objects.get(user=user.id)
+        app_user_login.delete()
+
+        return Response({"msg": "Logged Out Successfully"}, status=status.HTTP_200_OK)
 
 
 class SocialAuthLogin(APIView):

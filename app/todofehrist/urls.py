@@ -15,7 +15,7 @@ from django.views.decorators.cache import cache_page
 
 from todofehrist.views import AppUserView, activate_account, \
     AppUserLoginView, ReportView, AppUserResetPasswordView, \
-    TaskView, TaskUpdateView, TaskMediaFileView, SocialAuthLogin
+    TaskView, TaskUpdateView, TaskMediaFileView, SocialAuthLogin, AppUserLogoutView
 from todofehrist.exceptions import HTTPStatusCodeHandler
 
 urlpatterns = [
@@ -25,8 +25,11 @@ urlpatterns = [
     # Account Registration via Email Verification
     path('v1/activate/<uid>/<token>', activate_account, name='activate'),  # Email Verification
 
-    # User Sign In/Log Out
+    # User Sign In
     path('api/v1/auth', AppUserLoginView.as_view(), name='login'),
+
+    # User Log Out
+    path('api/v1/auth/logout', AppUserLogoutView.as_view(), name='logout'),
 
     # User Forgot & Reset Password Request
     path('api/v1/auth/reset', AppUserResetPasswordView.as_view()),
