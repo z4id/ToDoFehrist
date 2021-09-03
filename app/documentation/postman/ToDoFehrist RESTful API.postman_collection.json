@@ -40,7 +40,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"password\": \"my_password\"\n}",
+					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"password\": \"my_password1\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -100,7 +100,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"new_password\": \"my_password1\",\n    \"reset_token\": \"as6i2p-95fb805d65e00b3244bb274a0ba26da1\"\n}",
+					"raw": "{\n    \"email\": \"zaid.afzal.cv@gmail.com\",\n    \"new_password\": \"my_password1\",\n    \"reset_token\": \"asck7e-a018028db6f3fd1e7af42efe371d7daa\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -125,7 +125,7 @@
 		{
 			"name": "Logout",
 			"request": {
-				"method": "DELETE",
+				"method": "POST",
 				"header": [
 					{
 						"key": "Authorization",
@@ -134,38 +134,41 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/auth",
+					"raw": "{{HOST}}/api/v1/auth/logout",
 					"host": [
 						"{{HOST}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"auth"
+						"auth",
+						"logout"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "FaceBook OAuth",
+			"name": "OAuth Login",
 			"request": {
 				"method": "POST",
 				"header": [
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"type": "text"
+						"type": "text",
+						"disabled": true
 					},
 					{
 						"key": "Vary",
 						"value": "Accept",
-						"type": "text"
+						"type": "text",
+						"disabled": true
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"provider\": \"\",\n    \"access_token\": \"\"\n}",
+					"raw": "{\n    \"provider\": \"google\",\n    \"token\": \"\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -224,7 +227,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"Task5\",\n    \"description\": \"Description4\",\n    \"due_datetime\": \"2021-08-30T12:13:14.000Z\",\n    \"completion_datetime\": null\n}",
+					"raw": "{\n    \"title\": \"Task5\",\n    \"description\": \"Description4\",\n    \"due_datetime\": \"2021-09-04T12:13:14.000Z\",\n    \"completion_datetime\": null\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -264,7 +267,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/1",
+					"raw": "{{HOST}}/api/v1/tasks/1000",
 					"host": [
 						"{{HOST}}"
 					],
@@ -272,7 +275,7 @@
 						"api",
 						"v1",
 						"tasks",
-						"1"
+						"1000"
 					]
 				}
 			},
@@ -291,7 +294,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"Task3\",\n    \"description\": \"Description3\",\n    \"due_datetime\": \"2021-08-27T00:00:00.000Z\",\n    \"completion_status\": true, \n    \"completion_datetime\": null\n}",
+					"raw": "{\n    \"title\": \"Task3\",\n    \"description\": \"Description3\",\n    \"due_datetime\": \"2021-09-04T00:00:00.000Z\",\n    \"completion_status\": true, \n    \"completion_datetime\": \"2021-09-04T00:00:00.000Z\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -406,7 +409,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/home/zaid/Documents/DeepFaceLab/README.md"
+							"src": "/home/zaid/Downloads/Postman Agent-linux-x64-0.3.9.tar.gz"
 						}
 					]
 				},
@@ -466,7 +469,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{HOST}}/api/v1/tasks/1/files/1",
+					"raw": "{{HOST}}/api/v1/tasks/1/files/2",
 					"host": [
 						"{{HOST}}"
 					],
@@ -476,7 +479,7 @@
 						"tasks",
 						"1",
 						"files",
-						"1"
+						"2"
 					]
 				}
 			},
@@ -646,15 +649,6 @@
 						}
 					]
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": null
 			},
 			"response": []
 		}
