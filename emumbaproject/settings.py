@@ -9,15 +9,39 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-import os
-import enum
-import logging
 from pathlib import Path
-from django.core.management.utils import get_random_secret_key
+
+from EnvConfigurator import EnvVar, EnvParser
+
+# Define Environment Variable - name, var_type, choices, optional, default values for each
+env_config = [
+        EnvVar("LOG_FILE", str, optional=True, default='todofehrist_api.log'),
+        EnvVar("LOG_LEVEL", str, choices=["INFO", "DEBUG", "WARNING", "ERROR"]),
+        EnvVar("ALLOWED_HOSTS", list, separator=","),
+        EnvVar("DEBUG", bool),
+        EnvVar("SECRET_KEY", str),
+        EnvVar("DB_HOST", str),
+        EnvVar("DB_NAME", str),
+        EnvVar("DB_USER", str),
+        EnvVar("DB_PASSWORD", str),
+        EnvVar("DB_PORT", int),
+        EnvVar("DB_TEST_NAME", str, optional=True, default="testdb_todofehrist"),
+        EnvVar("EMAIL_HOST", str),
+        EnvVar("EMAIL_HOST_USER", str),
+        EnvVar("EMAIL_HOST_PASSWORD", str),
+        EnvVar("EMAIL_PORT", int),
+        EnvVar("GOOGLE_OAUTH_CLIENT_ID", str),
+        EnvVar("BROKER_URL", str),
+    ]
+
+# Get Env Values as class objects
+env_parser = EnvParser(env_config).all
+
+print(type(env_parser.DEBUG))
 
 # Get Logging Variable via Environment Variable
-LOG_FILE = os.environ.get('LOG_FILE', 'todofehrist_api.log')
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+LOG_FILE = env_parser.LOG_FILE
+LOG_LEVEL = env_parser.LOG_LEVEL
 
 # Logging Configuration
 LOGGING = {
@@ -53,67 +77,22 @@ LOGGING = {
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', None)
-ENVIRONMENT_STAGE = os.environ.get('ENV', None)
-
-
-class EnvironmentStages(enum.Enum):
-    """
-    This class defines Enums for deployment stages
-    """
-    DEV = "DEV"
-    QA = "QA"
-    UAT = "UAT"
-    PROD = "PROD"
-
-    @classmethod
-    def get_all_env_stage_names(cls):
-        """
-        return: all EnvironmentStages enum values in a list
-        """
-        return cls.__members__
-
-    @classmethod
-    def has_stage_name(cls, stage_name):
-        """
-        return True if a provided stage value exists in defined enums
-        """
-        return stage_name in cls.__members__
-
-
-if not (ENVIRONMENT_STAGE and EnvironmentStages.has_stage_name(ENVIRONMENT_STAGE)):
-    raise Exception("ENVIRONMENT not set properly. Check your Environment Variable 'ENV'. "
-                    "Possible 'ENV' Stages: {0}".format(" or ".join(
-                        EnvironmentStages.get_all_env_stage_names())))
-
-if ENVIRONMENT_STAGE == EnvironmentStages.DEV.value:
-    SECRET_KEY = get_random_secret_key() if not SECRET_KEY else SECRET_KEY
-elif not SECRET_KEY:
-    raise Exception("SECRET_KEY is not set in settings.py. "
-                    "Check your Environment Variable 'SECRET_KEY'")
-
-# DEBUG_PROPAGATE_EXCEPTIONS = False
+SECRET_KEY = env_parser.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if ENVIRONMENT_STAGE == EnvironmentStages.DEV.value:
-    DEBUG = True
-    ALLOWED_HOSTS = ['*']
-else:
-    DEBUG = False
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
-ENV_ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', None)
-if ENV_ALLOWED_HOSTS:
-    ALLOWED_HOSTS = [host.strip() for host in ENV_ALLOWED_HOSTS.split(',') if host]
-
-GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", '')
+DEBUG = env_parser.DEBUG
+ALLOWED_HOSTS = env_parser.ALLOWED_HOSTS
 
 # Application definition
+MY_APPS = [
+    'rest_framework',
+    'drf_yasg',
+    'todofehrist',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -122,10 +101,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'drf_yasg',
-    'todofehrist',
 ]
+INSTALLED_APPS.extend(MY_APPS)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -158,78 +135,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'emumbaproject.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-class SupportedDatabases(enum.Enum):
-    """
-    This class defines enums for supported databases by application
-    """
-    SQLITE = 'SQLITE'
-    POSTGRESQL = 'POSTGRESQL'
-
-    @classmethod
-    def has_db_key(cls, db_name):
-        """
-        return: if a provided database name is defined in SupportedDatabases Enum
-        """
-        return db_name in cls.__members__
-
-    @classmethod
-    def get_all_db_names(cls):
-        """
-        return: all supported databases names defined as ENum values
-        """
-        return cls.__members__
-
-
-db_configs = {}
-
-DATABASE = os.environ.get('DATABASE', None)
-if not (DATABASE and SupportedDatabases.has_db_key(DATABASE)):
-    raise Exception("DATABASE is not set properly. Set Environment Variable 'DATABASE' "
-                    "to {0}".format(' or '.join(SupportedDatabases.get_all_db_names())))
-
-if DATABASE == SupportedDatabases.POSTGRESQL.value:
-    DB_HOST = os.environ.get('DB_HOST', None)
-    DB_NAME = os.environ.get('DB_NAME', None)
-    DB_USER = os.environ.get('DB_USER', None)
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', None)
-    DB_PORT = os.environ.get('DB_PORT', None)
-    DB_TEST_NAME = os.environ.get('DB_TEST_NAME', 'TestdbToDoFehrist')
-
-    if not DB_HOST or not DB_USER or not DB_NAME or not DB_PASSWORD or not DB_PORT:
-        raise Exception("For PostgreSQL database selection, some Database Credentials are not set. "
-                        "Check 'DB_HOST' or 'DB_NAME' or 'DB_USER' or DB_PASSWORD or 'DB_PORT'")
-
-    postgresql_config = {
+DATABASES = {
+    'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'HOST': DB_HOST,
-            'NAME': DB_NAME,
-            'USER': DB_USER,
-            'PASSWORD': DB_PASSWORD,
-            'PORT': DB_PORT,
+            'HOST': env_parser.DB_HOST,
+            'NAME': env_parser.DB_NAME,
+            'USER': env_parser.DB_USER,
+            'PASSWORD': env_parser.DB_PASSWORD,
+            'PORT': env_parser.DB_PORT,
             'TEST': {
-                'NAME': DB_TEST_NAME
+                'NAME': env_parser.DB_TEST_NAME
             }
     }
-
-    db_configs[SupportedDatabases.POSTGRESQL.value] = postgresql_config
-
-if DATABASE == SupportedDatabases.SQLITE.value:
-
-    sqlite_config = {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-    }
-
-    db_configs[SupportedDatabases.SQLITE.value] = sqlite_config
-
-DATABASES = {
-    'default': db_configs[DATABASE]
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -249,7 +169,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -263,30 +182,23 @@ USE_L10N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = 'todofehrist.AppUser'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'todofehrist.AppUser'
-
+# EMail settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', None)
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', None)
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', None)
-EMAIL_PORT = os.environ.get('EMAIL_PORT', None)
+EMAIL_HOST = env_parser.EMAIL_HOST
+EMAIL_HOST_USER = env_parser.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = env_parser.EMAIL_HOST_PASSWORD
+EMAIL_PORT = env_parser.EMAIL_PORT
 EMAIL_USE_TLS = True
-
-if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD or not EMAIL_PORT:
-    EXCEPTION_MESSAGE = "EMAIL CREDENTIALS are not properly set."
-    logging.exception(EXCEPTION_MESSAGE)
-    raise Exception(EXCEPTION_MESSAGE)
 
 LOGIN_TOKEN_EXPIRY_TIME = 3600  # seconds
 REPORT_CACHE_TIME = 15*60  # seconds, 15 minutes
@@ -295,4 +207,6 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 CELERY_TIMEZONE = 'UTC'
-BROKER_URL = 'redis://127.0.0.1:6379'
+BROKER_URL = env_parser.BROKER_URL
+
+GOOGLE_OAUTH_CLIENT_ID = env_parser.GOOGLE_OAUTH_CLIENT_ID
