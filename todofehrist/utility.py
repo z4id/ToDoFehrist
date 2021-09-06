@@ -22,6 +22,31 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 
 
+class BaseAPIView:
+    """
+    Create Generic Response Payload object
+    """
+
+    def __init__(self):
+        pass
+
+    def response(self, data, data_type, description, error, status_code, page_data=None):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        response_data = {"success": False if error else True,
+                         "payload": {},
+                         "errors": error,
+                         "description": description}
+        response_data["payload"][data_type] = data
+        if page_data:
+            response_data["payload"]["total"] = page_data.get("total")
+            response_data["payload"]["from"] = page_data.get("from")
+            response_data["payload"]["to"] = page_data.get("to")
+
+        return Response(response_data, status=status_code)
+
+
 def send_email(subject, body, to_):
     """
     This method will send an email provided subject
@@ -86,8 +111,9 @@ def login_required(func_handler):
             user = user_login.user
 
         except UserLogin.DoesNotExist:
-            return Response({"msg": "Resource Access Not Allowed. Login To Continue..."},
-                            status=status.HTTP_401_UNAUTHORIZED)
+            return BaseAPIView().response({}, "Invalid Token", "Resource Request",
+                                          "Resource Access Not Allowed. Login To Continue..",
+                                          status.HTTP_401_UNAUTHORIZED)
 
         return func_handler(self, request, user, *args, **kwargs)
 

@@ -47,6 +47,15 @@ class UserLoginSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'token', 'created_at', 'expire_at')
 
 
+class UserRestPasswordSerializer(serializers.Serializer):
+    """
+        serializer class for validating reset password request
+    """
+    email = serializers.CharField()
+    new_password = serializers.CharField(min_length=8)
+    reset_token = serializers.CharField()
+
+
 class TaskSerializer(serializers.ModelSerializer):
     """
         Serializer class for Task Model
@@ -70,7 +79,7 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.due_datetime = validated_data.get('due_datetime', instance.due_datetime)
         instance.completion_status = validated_data.get('completion_status',
                                                         instance.completion_status)
-        instance.save()
+        instance.save(update=True)
         return instance
 
     def get_files(self, instance):

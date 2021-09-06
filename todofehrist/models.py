@@ -163,23 +163,31 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
 
-        can_be_updated = False
+        if not kwargs.get('update', False):
+            # New Task Object will be created
+            can_be_updated = False
 
-        result = UserQuotaManagement.objects.get_or_create(user=self.user)
-        quota_obj = result[0]
+            result = UserQuotaManagement.objects.get_or_create(user=self.user)
+            quota_obj = result[0]
 
-        max_allowed_tasks = UserSubscriptionLimits.objects.get(
-            subscription_type=self.user.subscription_type).max_allowed_tasks
+            max_allowed_tasks = UserSubscriptionLimits.objects.get(
+                subscription_type=self.user.subscription_type).max_allowed_tasks
 
-        if quota_obj.total_tasks < max_allowed_tasks:
-            quota_obj.total_tasks += 1
-            quota_obj.save()
-            can_be_updated = True
+            if quota_obj.total_tasks < max_allowed_tasks:
+                quota_obj.total_tasks += 1
+                quota_obj.save()
+                can_be_updated = True
 
-        if can_be_updated:
-            super(Task, self).save(*args, **kwargs)
+            if can_be_updated:
+                super(Task, self).save(*args, **kwargs)
+            else:
+                # raise Exception("User Quota for Task Creation Reached.")
+                pass
+
         else:
-            raise Exception("User Quota for Task Creation Reached.")
+            # Task object will partially updated
+            kwargs.pop('update')
+            super(Task, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
 
