@@ -1,13 +1,6 @@
 """
-NAME
-    test_views.py
-
-DESCRIPTION
     Contains unit tests to test todofehrist app's views
     ===================================================
-
-AUTHOR
-    Zaid Afzal
 """
 import json
 from django.urls import reverse
@@ -20,10 +13,6 @@ from todofehrist.models import AppUser, UserSubscriptionType, AppUserLogin
 
 class SignupTest(APITestCase):
     """
-    NAME
-        SignupTest
-
-    DESCRIPTION
         Contains unit tests for register route (Sing up process by email)
     """
 
@@ -71,10 +60,6 @@ class SignupTest(APITestCase):
 
 class LoginTest(APITestCase):
     """
-    NAME
-        LoginTest
-
-    DESCRIPTION
         Contains unit tests for auth route (Sing up process by email)
     """
 
