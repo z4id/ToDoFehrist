@@ -37,8 +37,6 @@ env_config = [
 # Get Env Values as class objects
 env_parser = EnvParser(env_config).all
 
-print(type(env_parser.DEBUG))
-
 # Get Logging Variable via Environment Variable
 LOG_FILE = env_parser.LOG_FILE
 LOG_LEVEL = env_parser.LOG_LEVEL
