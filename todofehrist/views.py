@@ -10,16 +10,16 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from todofehrist.serializers import AppUserSerializer, AppUserLoginSerializer, \
+from todofehrist.serializers import UserSerializer, UserLoginSerializer, \
     TaskSerializer, TaskMediaFilesSerializer
-from todofehrist.models import AppUser, Task, TaskMediaFiles, AppUserLogin
+from todofehrist.models import User, Task, TaskMediaFiles, UserLogin
 from todofehrist.utility import send_activation_email, account_token_gen, \
     login_required, reports_handler, send_forgot_password_email, authenticate_oauth_token
 
 from todofehrist.serializers import SocialAuthSerializer
 
 
-class AppUserView(APIView):
+class UserView(APIView):
     """
         Contains handler for registering a new user.
     """
@@ -29,18 +29,18 @@ class AppUserView(APIView):
         POST request handler which validates and registers a new AppUser
         """
 
-        serializer = AppUserSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            logging.exception("AppUserSerializer request.data is not valid.")
+            logging.exception("UserSerializer request.data is not valid.")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        app_user = serializer.save()
-        logging.info("New AppUser created and stored successfully.")
+        user = serializer.save()
+        logging.info("New User created and stored successfully.")
 
-        send_activation_email(app_user, request)
+        send_activation_email(user, request)
 
         response_msg = f"Sign Up Successful. An account activation link is " \
-                       f"sent to your email to your email '{app_user.email}', " \
+                       f"sent to your email to your email '{user.email}', " \
                        f"Kindly confirm it before first login."
 
         return Response({"msg": response_msg},
@@ -55,21 +55,21 @@ def activate_account(request, uid, token):
 
     try:
         uid = urlsafe_base64_decode(uid).decode()
-        app_user = AppUser.objects.get(pk=uid)
+        user = User.objects.get(pk=uid)
 
-        if app_user and account_token_gen().check_token(app_user, token):
-            app_user.is_email_verified = True
-            app_user.save()
+        if user and account_token_gen().check_token(user, token):
+            user.is_email_verified = True
+            user.save()
 
             return HttpResponse("Great. You have verified your account. You can login now.")
 
-    except AppUser.DoesNotExist:
+    except User.DoesNotExist:
         pass
 
     return HttpResponse("Oops. Activation Link is invalid or expired.")
 
 
-class AppUserLoginView(APIView):
+class UserLoginView(APIView):
     """
         View Handler for User Login via Email/Password
     """
@@ -79,33 +79,33 @@ class AppUserLoginView(APIView):
 
         """
 
-        app_user = None
+        user = None
 
         try:
-            app_user = AppUser.objects.get(email=request.data.get('email', ''), is_oauth=0)
+            user = User.objects.get(email=request.data.get('email', ''), is_oauth=0)
 
-        except AppUser.DoesNotExist:
+        except User.DoesNotExist:
             msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
             logging.exception(msg)
             return Response({"msg": "Email Address doesn't exist."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if not app_user.is_email_verified:
+        if not user.is_email_verified:
             msg = "403 - AppUserLoginView: provided email in POST request isn't verified yet."
             logging.debug(msg)
             return Response({"msg": "Email Address isn't verified yet."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if not app_user.check_password(request.data.get('password', '')):
+        if not user.check_password(request.data.get('password', '')):
             msg = "403 - AppUserLoginView: provided email/password pair is not correct. Try Again."
             logging.exception(msg)
             return Response({"msg": "Email/Password pair isn't valid."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        token = account_token_gen().make_token(app_user)
+        token = account_token_gen().make_token(user)
 
         try:
-            app_user_login = AppUserLogin.objects.get(user=app_user.id)
+            app_user_login = UserLogin.objects.get(user=user.id)
 
             app_user_login.token = token
             app_user_login.save()
@@ -113,26 +113,26 @@ class AppUserLoginView(APIView):
             return Response({"token": token},
                             status=status.HTTP_200_OK)
 
-        except AppUserLogin.DoesNotExist:
+        except UserLogin.DoesNotExist:
 
-            serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
+            serializer_ = UserLoginSerializer(data={"user": user.id, "token": token})
 
             if not serializer_.is_valid():
-                msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
+                msg = "403 - UserLoginView: Login Request failed due to invalid data."
                 logging.exception(msg)
                 return Response({"msg": "Invalid Email/Password. Try Again."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            appuser_login = serializer_.save()
+            user_login = serializer_.save()
 
-            msg = "200 - AppUserLoginView: UserLogged In Successfully."
+            msg = "200 - UserLoginView: UserLogged In Successfully."
             logging.info(msg)
 
             return Response({"token": serializer_.data['token']},
                             status=status.HTTP_200_OK)
 
 
-class AppUserLogoutView(APIView):
+class UserLogoutView(APIView):
     """
         View Handler to logout user upon request
     """
@@ -142,8 +142,8 @@ class AppUserLogoutView(APIView):
         """
         Logs out a user
         """
-        app_user_login = AppUserLogin.objects.get(user=user.id)
-        app_user_login.delete()
+        user_login = UserLogin.objects.get(user=user.id)
+        user_login.delete()
 
         return Response({"msg": "Logged Out Successfully"}, status=status.HTTP_200_OK)
 
@@ -168,18 +168,17 @@ class SocialAuthLogin(APIView):
         if not social_user_info:
             return Response({"msg": "Authentication Failed."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            app_user = AppUser.objects.get(email=social_user_info["email"])
+            user = User.objects.get(email=social_user_info["email"])
 
-        except AppUser.DoesNotExist:
+        except User.DoesNotExist:
+            user = User.objects.create_app_user_via_oauth(
+                email_address=social_user_info["email"])
+            user.save()
 
-            app_user = AppUser.objects.create_app_user_via_oauth(
-                email_address=social_user_info)
-            app_user.save()
-
-        token = account_token_gen().make_token(app_user)
+        token = account_token_gen().make_token(user)
 
         try:
-            app_user_login = AppUserLogin.objects.get(user=app_user.id)
+            app_user_login = UserLogin.objects.get(user=user.id)
 
             app_user_login.token = token
             app_user_login.save()
@@ -187,17 +186,17 @@ class SocialAuthLogin(APIView):
             return Response({"token": token},
                             status=status.HTTP_200_OK)
 
-        except AppUserLogin.DoesNotExist:
+        except UserLogin.DoesNotExist:
 
-            serializer_ = AppUserLoginSerializer(data={"user": app_user.id, "token": token})
+            serializer_ = UserLoginSerializer(data={"user": user.id, "token": token})
 
             if not serializer_.is_valid():
-                msg = "403 - AppUserLoginView: Login Request failed due to invalid data."
+                msg = "403 - UserLoginView: Login Request failed due to invalid data."
                 logging.exception(msg)
                 return Response({"msg": "Invalid Email/Password. Try Again."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            appuser_login = serializer_.save()
+            user_login = serializer_.save()
 
             msg = "200 - AppUserLoginView: UserLogged In Successfully."
             logging.info(msg)
@@ -206,7 +205,7 @@ class SocialAuthLogin(APIView):
                             status=status.HTTP_200_OK)
 
 
-class AppUserResetPasswordView(APIView):
+class UserResetPasswordView(APIView):
     """
         View Handler for forgot password and reset password
     """
@@ -216,20 +215,20 @@ class AppUserResetPasswordView(APIView):
 
         """
 
-        app_user = None
+        user = None
 
         try:
-            app_user = AppUser.objects.get(email=request.data.get('email', ''))
+            user = User.objects.get(email=request.data.get('email', ''))
 
-        except AppUser.DoesNotExist:
-            msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
+        except User.DoesNotExist:
+            msg = "404 - UserLoginView: provided email in POST request isn't valid"
             logging.exception(msg)
             return Response({"msg": "Email Address doesn't exist."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        send_forgot_password_email(app_user)
+        send_forgot_password_email(user)
 
-        response_msg = f"A password reset token is sent to your email {app_user.email}"
+        response_msg = f"A password reset token is sent to your email {user.email}"
         return Response({"msg": response_msg},
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -238,22 +237,22 @@ class AppUserResetPasswordView(APIView):
 
         """
 
-        app_user = None
+        user = None
 
         try:
-            app_user = AppUser.objects.get(email=request.data.get('email', ''))
+            user = User.objects.get(email=request.data.get('email', ''))
 
-        except AppUser.DoesNotExist:
-            msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
+        except User.DoesNotExist:
+            msg = "404 - UserLoginView: provided email in POST request isn't valid"
             logging.exception(msg)
             return Response({"msg": "Email Address doesn't exist."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if account_token_gen().check_token(app_user, request.data.get('reset_token', '')):
+        if account_token_gen().check_token(user, request.data.get('reset_token', '')):
             password_ = request.data.get('new_password', None)
             if password_:
-                app_user.set_password(raw_password=password_)
-                app_user.save()
+                user.set_password(raw_password=password_)
+                user.save()
                 return Response({"msg": "Password reset is successful."},
                                 status=status.HTTP_200_OK)
             else:
@@ -300,7 +299,7 @@ class TaskView(APIView):
             serializer_ = TaskSerializer(paginator.page(page_num), many=True, context={'request': request})
 
             return Response(serializer_.data, status=status.HTTP_200_OK)
-        except EmptyPage as e:
+        except EmptyPage:
             return Response([], status=status.HTTP_400_BAD_REQUEST)
 
     @login_required

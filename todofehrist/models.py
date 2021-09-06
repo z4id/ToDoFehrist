@@ -1,13 +1,21 @@
 """
     Contains all models for todofehrist application
 """
+from enum import Enum
 import datetime
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
 
-from todofehrist.enums import UserSubscriptionTypesEnum
+
+class UserSubscriptionTypesEnum(Enum):
+    """
+        Create Enums for UserSubscriptionTypes Model's attribute 'name'
+    """
+
+    FREEMIUM = 'FREEMIUM'
+    PREMIUM = 'PREMIUM'
 
 
 class UserSubscriptionType(models.Model):
@@ -19,14 +27,14 @@ class UserSubscriptionType(models.Model):
     currency = models.CharField(max_length=20, default='USD')
 
 
-class AppUserManager(BaseUserManager):
+class UserManager(BaseUserManager):
     """
-        Manager class for AppUser
+        Manager class for User
     """
 
     def create_app_user(self, email_address=None, password=None):
         """
-        This method creates an object of AppUser when validated data provided
+        This method creates an object of User when validated data provided
         from Models' serializer.
         """
         if not email_address or not password:
@@ -34,19 +42,19 @@ class AppUserManager(BaseUserManager):
 
         result_ = UserSubscriptionType.objects.get_or_create(
                     name=UserSubscriptionTypesEnum.FREEMIUM.value)
-        user_subscription_type = result_[0]
+        subscription_type = result_[0]
 
         email_address = self.normalize_email(email_address)
-        app_user = self.model(email=email_address, username=email_address)
-        app_user.set_password(password)
-        app_user.user_subscription_type = user_subscription_type
-        app_user.save()
+        user = self.model(email=email_address, username=email_address)
+        user.set_password(password)
+        user.subscription_type = subscription_type
+        user.save()
 
-        return app_user
+        return user
 
     def create_app_user_via_oauth(self, email_address=None):
         """
-        This method creates an object of AppUser when validated data provided
+        This method creates an object of User when validated data provided
         from Models' serializer.
         """
         if not email_address:
@@ -54,18 +62,18 @@ class AppUserManager(BaseUserManager):
 
         result_ = UserSubscriptionType.objects.get_or_create(
                     name=UserSubscriptionTypesEnum.FREEMIUM.value)
-        user_subscription_type = result_[0]
+        subscription_type = result_[0]
 
-        app_user = self.model(email=email_address, username=email_address)
-        app_user.user_subscription_type = user_subscription_type
-        app_user.is_oauth = True
-        app_user.is_email_verified = True
-        app_user.save()
+        user = self.model(email=email_address, username=email_address)
+        user.subscription_type = subscription_type
+        user.is_oauth = True
+        user.is_email_verified = True
+        user.save()
 
-        return app_user
+        return user
 
 
-class AppUser(AbstractUser):
+class User(AbstractUser):
     """
         Custom Django Model for User.
     """
@@ -73,7 +81,7 @@ class AppUser(AbstractUser):
     is_staff = None
     is_superuser = None
 
-    user_subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE)
+    subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE)
     is_email_verified = models.BooleanField(default=False)
     is_oauth = models.BooleanField(default=False)
     updated_datetime = models.DateTimeField(null=True)
@@ -82,12 +90,12 @@ class AppUser(AbstractUser):
         """
             Define Database Table Metadata
         """
-        db_table = 'AppUser'
+        db_table = 'user'
 
-    objects = AppUserManager()
+    objects = UserManager()
 
 
-class AppUserLogin(models.Model):
+class UserLogin(models.Model):
     """
         Custom Django Model for Login/Auth handling of AppUser.
     """
@@ -103,20 +111,20 @@ class AppUserLogin(models.Model):
         """
         # self.expire_at = self.created_at
         # self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME.seconds
-        super(AppUserLogin, self).save(*args, **kwargs)
+        super(UserLogin, self).save(*args, **kwargs)
 
     class Meta:
         """
             Define Database Table Metadata
         """
-        db_table = 'AppUserLogin'
+        db_table = 'user_login'
 
 
 class UserQuotaManagement(models.Model):
     """
         Custom Django Model for logging application usage for AppUser.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     total_tasks = models.IntegerField(default=0)
     downloaded_file_count = models.IntegerField(default=0)
     last_downloaded_datetime = models.DateTimeField(null=True)
@@ -128,8 +136,7 @@ class UserSubscriptionLimits(models.Model):
     """
         Maintain Limitations for UserSubscriptionType
     """
-    user_subscription_type = models.ForeignKey(UserSubscriptionType,
-                                               on_delete=models.CASCADE, null=False)
+    subscription_type = models.OneToOneField(UserSubscriptionType, on_delete=models.CASCADE)
     max_allowed_tasks = models.IntegerField(default=0)
     max_allowed_files = models.IntegerField(default=0)
     allowed_files_per_task = models.IntegerField(default=0)
@@ -161,7 +168,7 @@ class Task(models.Model):
         quota_obj = result[0]
 
         max_allowed_tasks = UserSubscriptionLimits.objects.get(
-            user_subscription_type=self.user.user_subscription_type).max_allowed_tasks
+            subscription_type=self.user.subscription_type).max_allowed_tasks
 
         if quota_obj.total_tasks < max_allowed_tasks:
             quota_obj.total_tasks += 1
@@ -188,9 +195,9 @@ class TaskMediaFiles(models.Model):
     """
         Maintain Uploaded files by User for a Task
     """
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    file = models.FileField(null=False)
+    file = models.FileField()
     uploaded_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
     last_accessed_datetime = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)

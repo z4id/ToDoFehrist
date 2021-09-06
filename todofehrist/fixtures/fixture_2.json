@@ -21,7 +21,7 @@
     "model": "todofehrist.usersubscriptionlimits",
     "pk": 1,
     "fields": {
-      "user_subscription_type": 1,
+      "subscription_type": 1,
       "max_allowed_tasks": 5,
       "max_allowed_files" : 0,
       "allowed_files_per_task": 0,

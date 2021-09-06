@@ -21,7 +21,7 @@
     "model": "todofehrist.usersubscriptionlimits",
     "pk": 1,
     "fields": {
-      "user_subscription_type": 1,
+      "subscription_type": 1,
       "max_allowed_tasks": 5,
       "max_allowed_files" : 0,
       "allowed_files_per_task": 0,
@@ -32,7 +32,7 @@
     }
   },
   {
-    "model": "todofehrist.appuser",
+    "model": "todofehrist.user",
     "pk": 1,
     "fields": {
       "password": "pbkdf2_sha256$260000$Xl8VobNXBdRNllBTxSk5Gw$u6FLccvMDnu8FHCybn8UjGIHgXyv1qvxWk7EcVA/BHQ=",
@@ -43,7 +43,7 @@
       "email": "zaid.afzal.cv@gmail.com",
       "is_active": true,
       "date_joined": "2021-08-29T12:32:43.259Z",
-      "user_subscription_type": 1,
+      "subscription_type": 1,
       "is_email_verified": true,
       "updated_datetime": null,
       "groups": [],
@@ -51,7 +51,7 @@
     }
   },
   {
-    "model": "todofehrist.appuserlogin",
+    "model": "todofehrist.userlogin",
     "pk": 1,
     "fields": {
       "user": 1,

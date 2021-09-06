@@ -16,7 +16,7 @@ from django.db.models import Count, Avg, Max
 from rest_framework.response import Response
 from rest_framework import status
 
-from todofehrist.models import Task, AppUserLogin
+from todofehrist.models import Task, UserLogin
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -82,10 +82,10 @@ def login_required(func_handler):
         user = None
 
         try:
-            user_login = AppUserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
+            user_login = UserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
             user = user_login.user
 
-        except AppUserLogin.DoesNotExist:
+        except UserLogin.DoesNotExist:
             return Response({"msg": "Resource Access Not Allowed. Login To Continue..."},
                             status=status.HTTP_401_UNAUTHORIZED)
 

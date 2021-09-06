@@ -3,37 +3,38 @@
 """
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from emumbaproject import settings
 
-from todofehrist.models import AppUser, AppUserLogin, Task, TaskMediaFiles
+from todofehrist.models import User, UserLogin, Task, TaskMediaFiles
 
 
-class AppUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     """
-        Implements Models AppUser's Serializer
+        Implements Models User's Serializer
     """
-    validators_ = [UniqueValidator(queryset=AppUser.objects.all())]
+    validators_ = [UniqueValidator(queryset=User.objects.all())]
     email = serializers.EmailField(required=True, validators=validators_)
 
     def create(self, validated_data):
         """
-        created an AppUser object after validating the data received in request
+        created an User object after validating the data received in request
         """
-        app_user = AppUser.objects.create_app_user(
+        user = User.objects.create_app_user(
                     email_address=validated_data['email'],
                     password=validated_data['password'])
-        return app_user
+        return user
 
     class Meta:
         """
             Define model and attributes to use for serialization
         """
-        model = AppUser
+        model = User
         fields = ('id', 'email', 'password')
 
 
-class AppUserLoginSerializer(serializers.ModelSerializer):
+class UserLoginSerializer(serializers.ModelSerializer):
     """
-        Serializer class for AppUserLogin Model
+        Serializer class for UserLogin Model
     """
 
     token = serializers.CharField()
@@ -42,7 +43,7 @@ class AppUserLoginSerializer(serializers.ModelSerializer):
         """
             Define model and attributes to use for serialization
         """
-        model = AppUserLogin
+        model = UserLogin
         fields = ('id', 'user', 'token', 'created_at', 'expire_at')
 
 
@@ -53,9 +54,9 @@ class TaskSerializer(serializers.ModelSerializer):
 
     title = serializers.CharField()
     description = serializers.CharField()
-    due_datetime = serializers.DateTimeField(input_formats=['%Y-%m-%dT%H:%M:%S.%fZ'])
+    due_datetime = serializers.DateTimeField(input_formats=settings.Serializer_DateTime_FORMATS)
     completion_datetime = serializers.DateTimeField(
-                            input_formats=['%Y-%m-%dT%H:%M:%S.%fZ'],
+                            input_formats=settings.Serializer_DateTime_FORMATS,
                             allow_null=True)
     files = serializers.SerializerMethodField()
 
@@ -112,5 +113,5 @@ class SocialAuthSerializer(serializers.Serializer):
     """
         serializer class for validating social oauth login view
     """
-    token = serializers.CharField(max_length=4096)
+    token = serializers.CharField(max_length=20000)
     provider = serializers.CharField()

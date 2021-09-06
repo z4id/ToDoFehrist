@@ -110,7 +110,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'todofehrist.middleware.LoggingRequestResponse',
+    'emumbaproject.middleware.LoggingRequestResponse',
 ]
 
 ROOT_URLCONF = 'emumbaproject.urls'
@@ -180,7 +180,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-AUTH_USER_MODEL = 'todofehrist.AppUser'
+AUTH_USER_MODEL = 'todofehrist.User'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -208,3 +208,5 @@ CELERY_TIMEZONE = 'UTC'
 BROKER_URL = env_parser.BROKER_URL
 
 GOOGLE_OAUTH_CLIENT_ID = env_parser.GOOGLE_OAUTH_CLIENT_ID
+
+Serializer_DateTime_FORMATS = ['%Y-%m-%dT%H:%M:%S.%fZ']
