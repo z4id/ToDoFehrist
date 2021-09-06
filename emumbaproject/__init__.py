@@ -1,15 +1,7 @@
 """
-NAME
-    emumbaproject
-
-DESCRIPTION
     emumbaproject contains todofehrist(a todolist Restful API) app
     =============================================================
 
-PACKAGE CONTENTS
-    -
-
-AUTHOR: Zaid Afzal
 """
 from __future__ import absolute_import, unicode_literals
 

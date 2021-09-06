@@ -15,7 +15,6 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -36,7 +35,7 @@ SchemaView = get_schema_view(
 
 urlpatterns = [
 
-    # Swagger API Doc Generator Views
+    # Swagger API Doc Generator Routes
     re_path(r'^doc(?P<format>\.json|\.yaml)$',
             SchemaView.without_ui(cache_timeout=0), name='schema-json'),
     path('doc/', SchemaView.with_ui('swagger', cache_timeout=0),
@@ -46,6 +45,4 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('', include('todofehrist.urls')),
-
-    # path('api/v1/oauth/', include('rest_framework_social_oauth2.urls')),
 ]

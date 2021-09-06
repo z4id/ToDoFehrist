@@ -1,16 +1,10 @@
 """
-NAME
-    celery.py
-
-DESCRIPTION
     Contain Task to set a scheduler task for todofehrist application
     ================================================================
 
     Task is responsible to send emails to systems users who have pending
     tasks with due_datetime on that particular day. Task/Method will be
     invoked at 12 AM everyday (UTC Standard)
-
-AUTHOR: Zaid Afzal
 """
 from __future__ import absolute_import, unicode_literals
 import os
@@ -41,27 +35,31 @@ def setup_periodic_tasks(sender, **kwargs):
     """
     # Schedule Task Every Day at 12:00 AM UTC Time
     sender.add_periodic_task(
-        crontab(hour=0, minute=0, day_of_month='1-31'),
-        to_do_fehrist_tasks_reminder.s('Sending Tasks Reminders to All Users'),
+        crontab(hour=0, minute=0),
+        to_do_fehrist_tasks_reminder.s(),
     )
+    # Reference add_periodic_table call method via s method
+    # https://docs.celeryproject.org/en/stable/userguide/periodic-tasks.html
+    # Setting these up from within the on_after_configure handler means that
+    # we’ll not evaluate the app at module level when using test.s()
 
 
 @app.task
-def to_do_fehrist_tasks_reminder(arg):
+def to_do_fehrist_tasks_reminder():
     """
     This method will send reminder to every user
     by email who have some pending tasks in to-do
     list
     """
 
-    print(arg)
-
     # TODO
     # Update query to send emails to users who have tasks pending for today.
     from todofehrist.models import Task
-    tasks = Task.objects.filter(completion_status=1)
+    from todofehrist.utility import send_email
 
-    for task_ in tasks:
-        print(task_.due_datetime)
+    result = Task.objects.filter(completion_status=1)
 
-    print("Done")
+    for user_entry in result:
+        send_email("ToDoFehrist - Pending Tasks Reminder",
+                   f"You have {user_entry['count']} pending tasks due today.",
+                   user_entry["email"])
