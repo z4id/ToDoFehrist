@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
 from todofehrist.models import UserSubscriptionTypesEnum
-from todofehrist.models import AppUser, UserSubscriptionType, AppUserLogin
+from todofehrist.models import User, UserSubscriptionType, UserLogin
 
 
 class SignupTest(APITestCase):
@@ -77,18 +77,18 @@ class LoginTest(APITestCase):
         cls.login_credentials = {"email": "valid_email@gmail.com", "password": "my_password"}
 
     def setUp(self):
-        app_user = AppUser(email=self.login_credentials["email"])
-        app_user.set_password(self.login_credentials["password"])
+        user = User(email=self.login_credentials["email"])
+        user.set_password(self.login_credentials["password"])
 
-        user_subscription_type = UserSubscriptionType.objects.get_or_create(
+        subscription_type = UserSubscriptionType.objects.get_or_create(
             name=UserSubscriptionTypesEnum.FREEMIUM.value)[0]
-        app_user.user_subscription_type = user_subscription_type
+        user.subscription_type = subscription_type
 
-        app_user.is_email_verified = True
+        user.is_email_verified = True
 
-        app_user.save()
+        user.save()
 
-        self.app_user = app_user
+        self.app_user = user
 
     def test_invalid_credentials(self):
         """
@@ -114,5 +114,5 @@ class LoginTest(APITestCase):
         response_data = json.loads(response.content)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected_token = AppUserLogin.objects.get(user=self.app_user.id).token
+        expected_token = UserLogin.objects.get(user=self.app_user.id).token
         self.assertEqual(response_data["token"], expected_token)
