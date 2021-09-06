@@ -1,11 +1,8 @@
 """
-NAME
-    todofehrist.utility
-
-DESCRIPTION
     Contains utility methods to support todofehrist.views
 """
 import logging
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -48,7 +45,7 @@ def send_activation_email(app_user, request):
     """
     This method will send an email to user when registered first
     time, containing an email verification link.
-    Args
+    args:
         - app_user
         - request
     """
@@ -88,7 +85,7 @@ def login_required(func_handler):
             user_login = AppUserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
             user = user_login.user
 
-        except Exception as execption_:
+        except AppUserLogin.DoesNotExist:
             return Response({"msg": "Resource Access Not Allowed. Login To Continue..."},
                             status=status.HTTP_401_UNAUTHORIZED)
 
@@ -182,8 +179,10 @@ def reports_handler(report_name, user):
     """
 
     report_handler = reports_config_.get(report_name, None)
+
     error = None
     report_data = None
+
     if report_handler:
         report_data = report_handler(user)
     else:

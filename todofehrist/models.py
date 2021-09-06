@@ -1,27 +1,17 @@
 """
-NAME
-    todofehrist.models.py
-
-DESCRIPTION
     Contains all models for todofehrist application
-
-AUTHOR
-    Zaid Afzal
 """
 import datetime
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
+
 from todofehrist.enums import UserSubscriptionTypesEnum
 
 
 class UserSubscriptionType(models.Model):
     """
-    NAME
-        UserSubscriptionType
-
-    DESCRIPTION
         Custom Django Model for SubscriptionType of User.
     """
     name = models.CharField(max_length=30, unique=True, null=False)
@@ -29,13 +19,55 @@ class UserSubscriptionType(models.Model):
     currency = models.CharField(max_length=20, default='USD')
 
 
+class AppUserManager(BaseUserManager):
+    """
+        Manager class for AppUser
+    """
+
+    def create_app_user(self, email_address=None, password=None):
+        """
+        This method creates an object of AppUser when validated data provided
+        from Models' serializer.
+        """
+        if not email_address or not password:
+            raise ValueError("Empty Signup Credentials.")
+
+        result_ = UserSubscriptionType.objects.get_or_create(
+                    name=UserSubscriptionTypesEnum.FREEMIUM.value)
+        user_subscription_type = result_[0]
+
+        email_address = self.normalize_email(email_address)
+        app_user = self.model(email=email_address, username=email_address)
+        app_user.set_password(password)
+        app_user.user_subscription_type = user_subscription_type
+        app_user.save()
+
+        return app_user
+
+    def create_app_user_via_oauth(self, email_address=None):
+        """
+        This method creates an object of AppUser when validated data provided
+        from Models' serializer.
+        """
+        if not email_address:
+            raise ValueError("Empty Signup Credentials.")
+
+        result_ = UserSubscriptionType.objects.get_or_create(
+                    name=UserSubscriptionTypesEnum.FREEMIUM.value)
+        user_subscription_type = result_[0]
+
+        app_user = self.model(email=email_address, username=email_address)
+        app_user.user_subscription_type = user_subscription_type
+        app_user.is_oauth = True
+        app_user.is_email_verified = True
+        app_user.save()
+
+        return app_user
+
+
 class AppUser(AbstractUser):
     """
-        NAME
-            AppUser
-
-        DESCRIPTION
-            Custom Django Model for User.
+        Custom Django Model for User.
     """
 
     is_staff = None
@@ -48,72 +80,15 @@ class AppUser(AbstractUser):
 
     class Meta:
         """
-        NAME
-            Meta
-
-        DESCRIPTION
-
+            Define Database Table Metadata
         """
         db_table = 'AppUser'
-
-    class AppUserManager(BaseUserManager):
-        """
-        NAME
-            AppUserManager
-
-        DESCRIPTION
-
-        """
-
-        def create_app_user(self, email_address=None, password=None):
-            """
-            This method creates an object of AppUser when validated data provided
-            from Models' serializer.
-            """
-            if not email_address or not password:
-                raise ValueError("Empty Signup Credentials.")
-
-            result_ = UserSubscriptionType.objects.get_or_create(
-                        name=UserSubscriptionTypesEnum.FREEMIUM.value)
-            user_subscription_type = result_[0]
-
-            email_address = self.normalize_email(email_address)
-            app_user = self.model(email=email_address, username=email_address)
-            app_user.set_password(password)
-            app_user.user_subscription_type = user_subscription_type
-            app_user.save()
-
-            return app_user
-
-        def create_app_user_via_oauth(self, email_address=None):
-            """
-            This method creates an object of AppUser when validated data provided
-            from Models' serializer.
-            """
-            if not email_address:
-                raise ValueError("Empty Signup Credentials.")
-
-            result_ = UserSubscriptionType.objects.get_or_create(
-                        name=UserSubscriptionTypesEnum.FREEMIUM.value)
-            user_subscription_type = result_[0]
-
-            app_user = self.model(email=email_address, username=email_address)
-            app_user.user_subscription_type = user_subscription_type
-            app_user.is_oauth = True
-            app_user.is_email_verified = True
-            app_user.save()
-
-            return app_user
 
     objects = AppUserManager()
 
 
 class AppUserLogin(models.Model):
     """
-    NAME
-        AppUserLogin
-
-    DESCRIPTION
         Custom Django Model for Login/Auth handling of AppUser.
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False, unique=True)
@@ -132,21 +107,13 @@ class AppUserLogin(models.Model):
 
     class Meta:
         """
-        NAME
-            Meta
-
-        DESCRIPTION
-
+            Define Database Table Metadata
         """
         db_table = 'AppUserLogin'
 
 
 class UserQuotaManagement(models.Model):
     """
-    NAME
-        UserQuotaManagement
-
-    DESCRIPTION
         Custom Django Model for logging application usage for AppUser.
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
@@ -159,11 +126,7 @@ class UserQuotaManagement(models.Model):
 
 class UserSubscriptionLimits(models.Model):
     """
-    NAME
-        UserSubscriptionLimits
-
-    DESCRIPTION
-
+        Maintain Limitations for UserSubscriptionType
     """
     user_subscription_type = models.ForeignKey(UserSubscriptionType,
                                                on_delete=models.CASCADE, null=False)
@@ -178,11 +141,7 @@ class UserSubscriptionLimits(models.Model):
 
 class Task(models.Model):
     """
-    NAME
-        Task
-
-    DESCRIPTION
-
+        Maintain User's Task related data
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     title = models.CharField(max_length=50, null=False)
@@ -227,11 +186,7 @@ class Task(models.Model):
 
 class TaskMediaFiles(models.Model):
     """
-    NAME
-        TaskMediaFiles
-
-    DESCRIPTION
-
+        Maintain Uploaded files by User for a Task
     """
     task = models.ForeignKey(Task, on_delete=models.CASCADE, null=False)
     name = models.CharField(max_length=50)

@@ -1,21 +1,14 @@
 """
-NAME
-    todofehrist/serializers.py
-
-DESCRIPTION
     Contains Serializer classes for all Model (todofehrist.models)
 """
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
 from todofehrist.models import AppUser, AppUserLogin, Task, TaskMediaFiles
 
 
 class AppUserSerializer(serializers.ModelSerializer):
     """
-    NAME
-        AppUserSerializer
-
-    DESCRIPTION
         Implements Models AppUser's Serializer
     """
     validators_ = [UniqueValidator(queryset=AppUser.objects.all())]
@@ -32,11 +25,7 @@ class AppUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         """
-        NAME
-            Meta
-
-        Description
-
+            Define model and attributes to use for serialization
         """
         model = AppUser
         fields = ('id', 'email', 'password')
@@ -44,22 +33,14 @@ class AppUserSerializer(serializers.ModelSerializer):
 
 class AppUserLoginSerializer(serializers.ModelSerializer):
     """
-    NAME
-        AppUserLoginSerializer
-
-    DESCRIPTION
-
+        Serializer class for AppUserLogin Model
     """
 
     token = serializers.CharField()
 
     class Meta:
         """
-        NAME
-            Meta
-
-        DESCRIPTION
-
+            Define model and attributes to use for serialization
         """
         model = AppUserLogin
         fields = ('id', 'user', 'token', 'created_at', 'expire_at')
@@ -67,11 +48,7 @@ class AppUserLoginSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     """
-    NAME
-        TaskSerializer
-
-    DESCRIPTION
-
+        Serializer class for Task Model
     """
 
     title = serializers.CharField()
@@ -108,11 +85,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         """
-        NAME
-            Meta
-
-        DESCRIPTION
-
+            Define model and attributes to use for serialization
         """
         model = Task
         fields = ('id', 'user', 'title', 'description', 'due_datetime',
@@ -122,22 +95,14 @@ class TaskSerializer(serializers.ModelSerializer):
 
 class TaskMediaFilesSerializer(serializers.ModelSerializer):
     """
-    NAME
-        TaskMediaFilesSerializer
-
-    DESCRIPTION
-
+        Serializer class for TaskMediaFiles Model
     """
 
     file = serializers.FileField()
 
     class Meta:
         """
-        NAME
-            Meta
-
-        DESCRIPTION
-
+            Define model and attributes to use for serialization
         """
         model = TaskMediaFiles
         fields = ('id', 'task', 'name', 'file')
@@ -145,7 +110,7 @@ class TaskMediaFilesSerializer(serializers.ModelSerializer):
 
 class SocialAuthSerializer(serializers.Serializer):
     """
-
+        serializer class for validating social oauth login view
     """
     token = serializers.CharField(max_length=4096)
     provider = serializers.CharField()

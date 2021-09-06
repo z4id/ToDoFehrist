@@ -1,22 +1,11 @@
 """
-NAME
-    todofehrist.middleware
-
-DESCRIPTION
     Contains all custom middleware classes written for todofehrist app.
-
-AUTHOR
-    Zaid Afzal
 """
 import logging
 
 
 class LoggingRequestResponse:
     """
-    NAME
-        LoggingRequestResponse
-
-    DESCRIPTION
         This class is implements functionality to log all requests
         and responses to/from todofehrist RESTful endpoints.
     """
