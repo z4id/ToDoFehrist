@@ -1,6 +1,7 @@
 """
     Contains all models for todofehrist application
 """
+import os
 from enum import Enum
 import datetime
 
@@ -201,3 +202,9 @@ class TaskMediaFiles(models.Model):
     uploaded_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
     last_accessed_datetime = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
+
+    def delete(self, using=None, keep_parents=False):
+        # delete file from local system
+        if self.file and os.path.isfile(self.file.path):
+            os.remove(self.file.path)
+        super(TaskMediaFiles, self).delete()
