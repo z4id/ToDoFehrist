@@ -7,7 +7,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from todofehrist.enums import UserSubscriptionTypesEnum
+from todofehrist.models import UserSubscriptionTypesEnum
 from todofehrist.models import AppUser, UserSubscriptionType, AppUserLogin
 
 

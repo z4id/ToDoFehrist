@@ -1,13 +1,21 @@
 """
     Contains all models for todofehrist application
 """
+from enum import Enum
 import datetime
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
 
-from todofehrist.enums import UserSubscriptionTypesEnum
+
+class UserSubscriptionTypesEnum(Enum):
+    """
+        Create Enums for UserSubscriptionTypes Model's attribute 'name'
+    """
+
+    FREEMIUM = 'FREEMIUM'
+    PREMIUM = 'PREMIUM'
 
 
 class UserSubscriptionType(models.Model):
