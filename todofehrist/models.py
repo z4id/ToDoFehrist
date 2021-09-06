@@ -168,7 +168,7 @@ class Task(models.Model):
         quota_obj = result[0]
 
         max_allowed_tasks = UserSubscriptionLimits.objects.get(
-            user_subscription_type=self.user.user_subscription_type).max_allowed_tasks
+            subscription_type=self.user.subscription_type).max_allowed_tasks
 
         if quota_obj.total_tasks < max_allowed_tasks:
             quota_obj.total_tasks += 1

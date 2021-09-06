@@ -3,7 +3,7 @@
 """
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from django.conf import settings
+from emumbaproject import settings
 
 from todofehrist.models import User, UserLogin, Task, TaskMediaFiles
 
@@ -113,5 +113,5 @@ class SocialAuthSerializer(serializers.Serializer):
     """
         serializer class for validating social oauth login view
     """
-    token = serializers.CharField()
+    token = serializers.CharField(max_length=20000)
     provider = serializers.CharField()

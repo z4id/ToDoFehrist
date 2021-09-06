@@ -82,10 +82,10 @@ def login_required(func_handler):
         user = None
 
         try:
-            user_login = AppUserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
+            user_login = UserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
             user = user_login.user
 
-        except AppUserLogin.DoesNotExist:
+        except UserLogin.DoesNotExist:
             return Response({"msg": "Resource Access Not Allowed. Login To Continue..."},
                             status=status.HTTP_401_UNAUTHORIZED)
 

@@ -171,9 +171,8 @@ class SocialAuthLogin(APIView):
             user = User.objects.get(email=social_user_info["email"])
 
         except User.DoesNotExist:
-
             user = User.objects.create_app_user_via_oauth(
-                email_address=social_user_info)
+                email_address=social_user_info["email"])
             user.save()
 
         token = account_token_gen().make_token(user)
