@@ -16,7 +16,7 @@ from django.db.models import Count, Avg, Max
 from rest_framework.response import Response
 from rest_framework import status
 
-from todofehrist.models import Task, AppUserLogin
+from todofehrist.models import Task, UserLogin
 
 from google.oauth2 import id_token
 from google.auth.transport import requests

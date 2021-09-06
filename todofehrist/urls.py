@@ -6,26 +6,26 @@ from django.urls import path, include
 from django.conf import settings
 from django.views.decorators.cache import cache_page
 
-from todofehrist.views import AppUserView, activate_account, \
-    AppUserLoginView, ReportView, AppUserResetPasswordView, \
-    TaskView, TaskUpdateView, TaskMediaFileView, SocialAuthLogin, AppUserLogoutView
+from todofehrist.views import UserView, activate_account, \
+    UserLoginView, ReportView, UserResetPasswordView, \
+    TaskView, TaskUpdateView, TaskMediaFileView, SocialAuthLogin, UserLogoutView
 from todofehrist.exceptions import HTTPStatusCodeHandler
 
 urlpatterns = [
     # User Registration
-    path('api/v1/register', AppUserView.as_view(), name='register'),
+    path('api/v1/register', UserView.as_view(), name='register'),
 
     # Account Registration via Email Verification
     path('v1/activate/<uid>/<token>', activate_account, name='activate'),  # Email Verification
 
     # User Sign In
-    path('api/v1/auth', AppUserLoginView.as_view(), name='login'),
+    path('api/v1/auth', UserLoginView.as_view(), name='login'),
 
     # User Log Out
-    path('api/v1/auth/logout', AppUserLogoutView.as_view(), name='logout'),
+    path('api/v1/auth/logout', UserLogoutView.as_view(), name='logout'),
 
     # User Forgot & Reset Password Request
-    path('api/v1/auth/reset', AppUserResetPasswordView.as_view()),
+    path('api/v1/auth/reset', UserResetPasswordView.as_view()),
 
     path('api/v1/oauth', SocialAuthLogin.as_view()),
 
