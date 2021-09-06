@@ -11,28 +11,27 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from todofehrist.serializers import UserSerializer, UserLoginSerializer, \
-    TaskSerializer, TaskMediaFilesSerializer
+    TaskSerializer, TaskMediaFilesSerializer, UserRestPasswordSerializer
 from todofehrist.models import User, Task, TaskMediaFiles, UserLogin
 from todofehrist.utility import send_activation_email, account_token_gen, \
-    login_required, reports_handler, send_forgot_password_email, authenticate_oauth_token
+    login_required, reports_handler, send_forgot_password_email, authenticate_oauth_token, BaseAPIView
 
 from todofehrist.serializers import SocialAuthSerializer
 
 
-class UserView(APIView):
+class UserView(APIView, BaseAPIView):
     """
         Contains handler for registering a new user.
     """
 
     def post(self, request):
         """
-        POST request handler which validates and registers a new AppUser
+            User Sign Up Handler
         """
 
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            logging.exception("UserSerializer request.data is not valid.")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "profile", "Sign Up", serializer.errors, status.HTTP_400_BAD_REQUEST)
 
         user = serializer.save()
         logging.info("New User created and stored successfully.")
@@ -43,8 +42,7 @@ class UserView(APIView):
                        f"sent to your email to your email '{user.email}', " \
                        f"Kindly confirm it before first login."
 
-        return Response({"msg": response_msg},
-                        status=status.HTTP_200_OK)
+        return self.response({}, "profile", f"{response_msg}", None, status.HTTP_200_OK)
 
 
 def activate_account(request, uid, token):
@@ -69,14 +67,14 @@ def activate_account(request, uid, token):
     return HttpResponse("Oops. Activation Link is invalid or expired.")
 
 
-class UserLoginView(APIView):
+class UserLoginView(APIView, BaseAPIView):
     """
         View Handler for User Login via Email/Password
     """
 
     def post(self, request):
         """
-
+            User Login Handler
         """
 
         user = None
@@ -85,54 +83,44 @@ class UserLoginView(APIView):
             user = User.objects.get(email=request.data.get('email', ''), is_oauth=0)
 
         except User.DoesNotExist:
-            msg = "404 - AppUserLoginView: provided email in POST request isn't valid"
-            logging.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Login User", "Email Address doesn't exist.",
+                                 status.HTTP_404_NOT_FOUND)
 
         if not user.is_email_verified:
-            msg = "403 - AppUserLoginView: provided email in POST request isn't verified yet."
-            logging.debug(msg)
-            return Response({"msg": "Email Address isn't verified yet."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Login User",
+                                 "Email Address isn't verified yet. Check your email for verification link.",
+                                 status.HTTP_401_UNAUTHORIZED)
 
         if not user.check_password(request.data.get('password', '')):
-            msg = "403 - AppUserLoginView: provided email/password pair is not correct. Try Again."
-            logging.exception(msg)
-            return Response({"msg": "Email/Password pair isn't valid."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Login User",
+                                 "Email/Password pair isn't valid.",
+                                 status.HTTP_400_BAD_REQUEST)
 
         token = account_token_gen().make_token(user)
 
         try:
-            app_user_login = UserLogin.objects.get(user=user.id)
+            user_login = UserLogin.objects.get(user=user.id)
 
-            app_user_login.token = token
-            app_user_login.save()
+            user_login.token = token
+            user_login.save()
 
-            return Response({"token": token},
-                            status=status.HTTP_200_OK)
+            return self.response({"token": token}, "user", "User Login", None, status.HTTP_200_OK)
 
         except UserLogin.DoesNotExist:
 
             serializer_ = UserLoginSerializer(data={"user": user.id, "token": token})
 
             if not serializer_.is_valid():
-                msg = "403 - UserLoginView: Login Request failed due to invalid data."
-                logging.exception(msg)
-                return Response({"msg": "Invalid Email/Password. Try Again."},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return self.response({}, "user", "Login User",
+                                     serializer_.errors,
+                                     status.HTTP_400_BAD_REQUEST)
 
             user_login = serializer_.save()
 
-            msg = "200 - UserLoginView: UserLogged In Successfully."
-            logging.info(msg)
-
-            return Response({"token": serializer_.data['token']},
-                            status=status.HTTP_200_OK)
+            return self.response({"token": token}, "user", "User Login", None, status.HTTP_200_OK)
 
 
-class UserLogoutView(APIView):
+class UserLogoutView(APIView, BaseAPIView):
     """
         View Handler to logout user upon request
     """
@@ -145,10 +133,10 @@ class UserLogoutView(APIView):
         user_login = UserLogin.objects.get(user=user.id)
         user_login.delete()
 
-        return Response({"msg": "Logged Out Successfully"}, status=status.HTTP_200_OK)
+        return self.response({}, "user", "User Logout", None, status.HTTP_200_OK)
 
 
-class SocialAuthLogin(APIView):
+class SocialAuthLogin(APIView, BaseAPIView):
     """
         View Handler for verifying social oauth login
         Currently supports Google OAuth Sign in
@@ -156,17 +144,22 @@ class SocialAuthLogin(APIView):
 
     def post(self, request):
         """
+            Verify provider's oauth token for login
         """
 
         social_serializer = SocialAuthSerializer(data=request.data)
 
         if not social_serializer.is_valid():
-            return Response(social_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Social OAuth",
+                                 social_serializer.errors,
+                                 status.HTTP_400_BAD_REQUEST)
 
         social_user_info = authenticate_oauth_token(request.data["provider"], request.data["token"])
 
         if not social_user_info:
-            return Response({"msg": "Authentication Failed."}, status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Social OAuth",
+                                 "Authentication Failed.",
+                                 status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(email=social_user_info["email"])
 
@@ -178,41 +171,35 @@ class SocialAuthLogin(APIView):
         token = account_token_gen().make_token(user)
 
         try:
-            app_user_login = UserLogin.objects.get(user=user.id)
+            user_login = UserLogin.objects.get(user=user.id)
 
-            app_user_login.token = token
-            app_user_login.save()
+            user_login.token = token
+            user_login.save()
 
-            return Response({"token": token},
-                            status=status.HTTP_200_OK)
+            return self.response({"token": token}, "user", "Social OAuth", None, status.HTTP_200_OK)
 
         except UserLogin.DoesNotExist:
 
             serializer_ = UserLoginSerializer(data={"user": user.id, "token": token})
 
             if not serializer_.is_valid():
-                msg = "403 - UserLoginView: Login Request failed due to invalid data."
-                logging.exception(msg)
-                return Response({"msg": "Invalid Email/Password. Try Again."},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return self.response({}, "user", "Social OAuth",
+                                     serializer_.errors,
+                                     status.HTTP_400_BAD_REQUEST)
 
             user_login = serializer_.save()
 
-            msg = "200 - AppUserLoginView: UserLogged In Successfully."
-            logging.info(msg)
-
-            return Response({"token": serializer_.data['token']},
-                            status=status.HTTP_200_OK)
+            return self.response({"token": serializer_.data['token']}, "user", "Social OAuth", None, status.HTTP_200_OK)
 
 
-class UserResetPasswordView(APIView):
+class UserResetPasswordView(APIView, BaseAPIView):
     """
         View Handler for forgot password and reset password
     """
 
     def get(self, request):
         """
-
+            Send reset password email (a token for verification)
         """
 
         user = None
@@ -221,49 +208,49 @@ class UserResetPasswordView(APIView):
             user = User.objects.get(email=request.data.get('email', ''))
 
         except User.DoesNotExist:
-            msg = "404 - UserLoginView: provided email in POST request isn't valid"
-            logging.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Forgot Password", "Email Address doesn't exist.",
+                                 status.HTTP_404_NOT_FOUND)
 
         send_forgot_password_email(user)
 
         response_msg = f"A password reset token is sent to your email {user.email}"
-        return Response({"msg": response_msg},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return self.response({}, "user", f"{response_msg}", None, status.HTTP_200_OK)
 
     def post(self, request):
         """
-
+            Verify token to allow reset password option
         """
 
         user = None
+        serializer_obj = UserRestPasswordSerializer(data=request.data.copy())
+
+        if not serializer_obj.is_valid():
+            return self.response({}, "user", "Reset Password", serializer_obj.errors,
+                                 status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(email=request.data.get('email', ''))
 
         except User.DoesNotExist:
-            msg = "404 - UserLoginView: provided email in POST request isn't valid"
-            logging.exception(msg)
-            return Response({"msg": "Email Address doesn't exist."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Reset Password", "Email Address doesn't exist.",
+                                 status.HTTP_404_NOT_FOUND)
 
         if account_token_gen().check_token(user, request.data.get('reset_token', '')):
             password_ = request.data.get('new_password', None)
             if password_:
                 user.set_password(raw_password=password_)
                 user.save()
-                return Response({"msg": "Password reset is successful."},
-                                status=status.HTTP_200_OK)
+                return self.response({}, "user", "Reset Password", None,
+                                     status.HTTP_200_OK)
             else:
-                return Response({"msg": "Invalid Password String"},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return self.response({}, "user", "Reset Password", "Invalid Password String",
+                                     status.HTTP_404_NOT_FOUND)
         else:
-            return Response({"msg": "Invalid reset_token provided."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "user", "Reset Password", "Invalid reset_token provided.",
+                                 status.HTTP_404_NOT_FOUND)
 
 
-class TaskView(APIView):
+class TaskView(APIView, BaseAPIView):
     """
         View Handler for Creating New Task and Getting List of Task.
         Search Task feature is also handled by this.
@@ -287,10 +274,11 @@ class TaskView(APIView):
                 paginator = Paginator(tasks, page_size)
                 serializer_ = TaskSerializer(paginator.page(page_num), many=True, context={'request': request})
 
-                return Response(serializer_.data, status=status.HTTP_200_OK)
+                page_data = {"total": paginator.count, "to": 1, "from": 1}
+                return self.response(serializer_.data, "tasks", "Relevant Tasks", None, status.HTTP_200_OK, page_data)
 
             except EmptyPage:
-                return Response([], status=status.HTTP_400_BAD_REQUEST)
+                return self.response([], "tasks", "Relevant Tasks", "No Tasks Found.", status.HTTP_404_NOT_FOUND)
 
         tasks = Task.objects.filter(user=user.id)
 
@@ -298,9 +286,10 @@ class TaskView(APIView):
             paginator = Paginator(tasks, page_size)
             serializer_ = TaskSerializer(paginator.page(page_num), many=True, context={'request': request})
 
-            return Response(serializer_.data, status=status.HTTP_200_OK)
+            page_data = {"total": paginator.count, "to": 1, "from": 1}
+            return self.response(serializer_.data, "tasks", "All Tasks", None, status.HTTP_200_OK, page_data)
         except EmptyPage:
-            return Response([], status=status.HTTP_400_BAD_REQUEST)
+            return self.response([], "tasks", "All Tasks", "No Tasks Found.", status.HTTP_404_NOT_FOUND)
 
     @login_required
     def post(self, request, user):
@@ -312,17 +301,17 @@ class TaskView(APIView):
 
         serializer_ = TaskSerializer(data=data_)
         if not serializer_.is_valid():
-            return Response(serializer_.errors, status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "task", "Create New Task", serializer_.errors, status.HTTP_400_BAD_REQUEST)
 
         try:
             task = serializer_.save()
-            return Response(serializer_.data, status=status.HTTP_200_OK)
+            return self.response(serializer_.data, "task", "Create New Task", None, status.HTTP_200_OK)
         except Exception as exception_:
-            return Response({"msg": "User Quota for Task Creation Reached."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "task", "Create New Task", "User Quota for Task Creation Reached.",
+                                 status.HTTP_400_BAD_REQUEST)
 
 
-class TaskUpdateView(APIView):
+class TaskUpdateView(APIView, BaseAPIView):
     """
         View Handler to Fetch/Update/Delete a Task
     """
@@ -338,11 +327,11 @@ class TaskUpdateView(APIView):
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
         except Exception:
-            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "task", "Get Task", f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         serializer_ = TaskSerializer(task_)
-        return Response(serializer_.data, status=status.HTTP_200_OK)
+        return self.response(serializer_.data, "task", "Get A Task", None, status.HTTP_200_OK)
 
     @login_required
     def post(self, request, user, task_id):
@@ -355,56 +344,58 @@ class TaskUpdateView(APIView):
 
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except Exception:
-            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except Task.DoesNotExist:
+            return self.response({}, "task", "Update Task", f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         serializer_ = TaskSerializer(data=data_, partial=True)
         if not serializer_.is_valid():
-            return Response(serializer_.errors, status=status.HTTP_400_BAD_REQUEST)
+            return self.response({}, "task", "Update Task", serializer_.errors, status.HTTP_400_BAD_REQUEST)
 
         serializer_.update(task_, data_)
 
-        return Response(serializer_.data, status=status.HTTP_200_OK)
+        return self.response(serializer_.data, "task", "Update Task", None, status.HTTP_200_OK)
 
     @login_required
     def delete(self, request, user, task_id):
         """
-
+            deletes the task object.
         """
 
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except Exception:
-            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except Task.DoesNotExist:
+            return self.response({}, "task", "Delete Task", f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         task_.delete()
 
-        return Response({"msg": f"Task with id {task_id} is deleted successfully."},
-                        status=status.HTTP_200_OK)
+        return self.response({}, "task", "Delete Task", None,
+                             status.HTTP_200_OK)
 
 
-class TaskMediaFileView(APIView):
+class TaskMediaFileView(APIView, BaseAPIView):
     """
         View handler for Uploading/Downloading/Deleting Media files for a Task
     """
     @login_required
     def get(self, request, user, task_id, file_id):
         """
-
+            Download Task Media File
         """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except Exception:
-            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except Task.DoesNotExist:
+            return self.response({}, "task", "Download File",
+                                 f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         try:
             task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
-        except Exception:
-            return Response({"msg": f"File with id {file_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except TaskMediaFiles.DoesNotExist:
+            return self.response({}, "file", "Download File",
+                                 f"File with id {file_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         file_handle = task_file.file.open()
 
@@ -418,50 +409,61 @@ class TaskMediaFileView(APIView):
     @login_required
     def post(self, request, user, task_id):
         """
-
+            Upload Task Media File
         """
 
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
-        except Exception:
-            return Response({"msg": f"Task with id {task_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except Task.DoesNotExist:
+            return self.response({}, "task", "Upload File",
+                                 f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         data_ = request.data.copy()
         data_['task'] = task_id
 
-        if data_['file']:
+        if data_.get('file'):
             data_['name'] = data_['file'].name
-        else:
-            data_['name'] = ''
 
         file_serializer = TaskMediaFilesSerializer(data=data_)
 
         if file_serializer.is_valid():
             file_serializer.save()
-            return Response(file_serializer.data, status=status.HTTP_200_OK)
+            return self.response(file_serializer.data, "file", "Upload File",
+                                 None,
+                                 status.HTTP_200_OK)
 
-        return Response(file_serializer.errors, status=status.HTTP_200_OK)
+        return self.response({}, "file", "Upload File",
+                             file_serializer.errors,
+                             status.HTTP_400_BAD_REQUEST)
 
     @login_required
     def delete(self, request, user, task_id, file_id):
         """
-
+            Delete a Task Media File
         """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
+        except Task.DoesNotExist:
+            return self.response({}, "task", "Delete File",
+                                 f"Task with id {task_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
+
+        try:
             task_file = TaskMediaFiles.objects.get(id=file_id, task=task_.id)
-        except Exception:
-            return Response({"msg": f"File with id {file_id} doesn't exist or belong to you."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except TaskMediaFiles.DoesNotExist:
+            return self.response({}, "file", "Delete File",
+                                 f"File with id {file_id} doesn't exist or belong to you.",
+                                 status.HTTP_404_NOT_FOUND)
 
         task_file.delete()
 
-        return Response({"msg": f"File with id {file_id} is deleted successfully."},
-                        status=status.HTTP_200_OK)
+        return self.response({}, "file", "Delete File",
+                             None,
+                             status.HTTP_200_OK)
 
 
-class ReportView(APIView):
+class ReportView(APIView, BaseAPIView):
     """
         View Handler for Reports
     """
@@ -474,6 +476,6 @@ class ReportView(APIView):
         report_name = request.GET.get('name')
         report_data, error = reports_handler(report_name, user)
         if report_data:
-            return Response(report_data, status=status.HTTP_200_OK)
+            return self.response(report_data, "report", "Report Data", error, status.HTTP_200_OK)
 
-        return Response({"msg": error}, status=status.HTTP_404_NOT_FOUND)
+        return self.response({}, "report", "Report Data", error, status.HTTP_404_NOT_FOUND)
