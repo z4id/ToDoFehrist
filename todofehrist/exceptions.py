@@ -1,12 +1,5 @@
 """
-NAME
-    todofehrist.exceptions.py
-
-DESCRIPTION
     Defines all custom exception handlers
-
-AUTHOR
-    Zaid Afzal
 """
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,10 +7,6 @@ from rest_framework.response import Response
 
 class HTTPStatusCodeHandler:
     """
-    NAME
-        HTTPStatusCodeHandler
-
-    DESCRIPTION
         Implements method for handling every exception against
         all HTTP status codes.
     """

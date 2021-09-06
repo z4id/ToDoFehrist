@@ -1,13 +1,5 @@
 """
-NAME
-    todofehrist.views
-
-DESCRIPTION
     This file contains all todofehrist app views.
-    ============================================
-
-AUTHOR
-    Zaid Afzal
 """
 import logging
 from django.http import HttpResponse, FileResponse
@@ -29,10 +21,6 @@ from todofehrist.serializers import SocialAuthSerializer
 
 class AppUserView(APIView):
     """
-    NAME
-        AppUserView
-
-    DESCRIPTION
         Contains handler for registering a new user.
     """
 
@@ -83,16 +71,12 @@ def activate_account(request, uid, token):
 
 class AppUserLoginView(APIView):
     """
-    NAME
-        AppUserLoginView
-
-    DESCRIPTION
-
+        View Handler for User Login via Email/Password
     """
 
     def post(self, request):
         """
-        POST request handler
+
         """
 
         app_user = None
@@ -150,11 +134,7 @@ class AppUserLoginView(APIView):
 
 class AppUserLogoutView(APIView):
     """
-    NAME
-        AppUserLogoutView
-
-    DESCRIPTION
-
+        View Handler to logout user upon request
     """
 
     @login_required
@@ -170,16 +150,12 @@ class AppUserLogoutView(APIView):
 
 class SocialAuthLogin(APIView):
     """
-    NAME
-        SocialAuthLogin
-
-    DESCRIPTION
-
+        View Handler for verifying social oauth login
+        Currently supports Google OAuth Sign in
     """
 
     def post(self, request):
         """
-        POST request handler
         """
 
         social_serializer = SocialAuthSerializer(data=request.data)
@@ -232,16 +208,12 @@ class SocialAuthLogin(APIView):
 
 class AppUserResetPasswordView(APIView):
     """
-    NAME
-        AppUserResetPasswordView
-
-    DESCRIPTION
-
+        View Handler for forgot password and reset password
     """
 
     def get(self, request):
         """
-        GET Request Handler
+
         """
 
         app_user = None
@@ -263,7 +235,7 @@ class AppUserResetPasswordView(APIView):
 
     def post(self, request):
         """
-        POST request handler
+
         """
 
         app_user = None
@@ -294,17 +266,14 @@ class AppUserResetPasswordView(APIView):
 
 class TaskView(APIView):
     """
-    NAME
-        TaskView
-
-    DESCRIPTION
-
+        View Handler for Creating New Task and Getting List of Task.
+        Search Task feature is also handled by this.
     """
 
     @login_required
     def get(self, request, user):
         """
-        GET Request Handler
+
         """
 
         search_term = request.GET.get('search', None)
@@ -334,11 +303,10 @@ class TaskView(APIView):
         except EmptyPage as e:
             return Response([], status=status.HTTP_400_BAD_REQUEST)
 
-
     @login_required
     def post(self, request, user):
         """
-        POST Request Handler
+
         """
         data_ = request.data.copy()
         data_["user"] = user.id
@@ -357,17 +325,13 @@ class TaskView(APIView):
 
 class TaskUpdateView(APIView):
     """
-    NAME
-        TaskUpdateView
-
-    DESCRIPTION
-
+        View Handler to Fetch/Update/Delete a Task
     """
 
     @login_required
     def get(self, request, user, task_id):
         """
-        GET Request Handler
+
         """
 
         task_ = None
@@ -384,7 +348,7 @@ class TaskUpdateView(APIView):
     @login_required
     def post(self, request, user, task_id):
         """
-        POST Request Handler
+
         """
 
         data_ = request.data.copy()
@@ -407,7 +371,7 @@ class TaskUpdateView(APIView):
     @login_required
     def delete(self, request, user, task_id):
         """
-        DELETE Request Handler
+
         """
 
         try:
@@ -424,16 +388,12 @@ class TaskUpdateView(APIView):
 
 class TaskMediaFileView(APIView):
     """
-    NAME
-        TaskMediaFileView
-
-    DESCRIPTION
-
+        View handler for Uploading/Downloading/Deleting Media files for a Task
     """
     @login_required
     def get(self, request, user, task_id, file_id):
         """
-        GET Request Handler
+
         """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
@@ -459,7 +419,7 @@ class TaskMediaFileView(APIView):
     @login_required
     def post(self, request, user, task_id):
         """
-        POST Request Handler
+
         """
 
         try:
@@ -487,7 +447,7 @@ class TaskMediaFileView(APIView):
     @login_required
     def delete(self, request, user, task_id, file_id):
         """
-        DELETE Request Handler
+
         """
         try:
             task_ = Task.objects.get(id=task_id, user=user.id)
@@ -504,16 +464,13 @@ class TaskMediaFileView(APIView):
 
 class ReportView(APIView):
     """
-    NAME
-        ReportView
-
-    DESCRIPTION
-
+        View Handler for Reports
     """
+
     @login_required
     def get(self, request, user):
         """
-        GET Request Handler
+
         """
         report_name = request.GET.get('name')
         report_data, error = reports_handler(report_name, user)

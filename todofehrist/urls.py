@@ -1,12 +1,5 @@
 """
-NAME
-    todofehrist.urls
-
-DESCRIPTION
     Contain urls for ToDoFehrist app endpoints
-
-AUTHOR
-    Zaid Afzal
 """
 from django.urls import path, include
 # from django.conf.urls import handler500
