@@ -306,8 +306,8 @@ class TaskView(APIView, BaseAPIView):
         try:
             task = serializer_.save()
             return self.response(serializer_.data, "task", "Create New Task", None, status.HTTP_200_OK)
-        except Exception as exception_:
-            return self.response({}, "task", "Create New Task", "User Quota for Task Creation Reached.",
+        except ValueError as exception_:
+            return self.response({}, "task", "Create New Task", str(exception_),
                                  status.HTTP_400_BAD_REQUEST)
 
 
