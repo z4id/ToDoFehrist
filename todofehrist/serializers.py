@@ -6,6 +6,7 @@ from rest_framework.validators import UniqueValidator
 from emumbaproject import settings
 
 from todofehrist.models import User, UserLogin, Task, TaskMediaFiles
+from todofehrist.models_utility import get_datetime_now
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -64,9 +65,6 @@ class TaskSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     description = serializers.CharField()
     due_datetime = serializers.DateTimeField(input_formats=settings.Serializer_DateTime_FORMATS)
-    completion_datetime = serializers.DateTimeField(
-                            input_formats=settings.Serializer_DateTime_FORMATS,
-                            allow_null=True)
     files = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
@@ -77,8 +75,13 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
         instance.due_datetime = validated_data.get('due_datetime', instance.due_datetime)
-        instance.completion_status = validated_data.get('completion_status',
-                                                        instance.completion_status)
+        completion_status = validated_data.get('completion_status',
+                                               instance.completion_status)
+        if completion_status:
+            instance.completion_datetime = get_datetime_now()
+        else:
+            instance.completion_datetime = None
+        instance.completion_status = completion_status
         instance.update()
         return instance
 

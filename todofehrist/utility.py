@@ -142,17 +142,16 @@ def gen_report_tasks_status(user):
 
     dict_['total'] = dict_["complete"] + dict_["incomplete"]
 
-    response_dict = {"tasks": dict_}
-
-    return response_dict
+    return {"tasks_summary": dict_}
 
 
 def gen_report_tasks_completion_avg(user):
     """
     This method returns average completion of user's tasks
     """
-    result = Task.objects.filter(user=user.id, completion_status=0).values(
-        date=TruncDate('completion_datetime')).annotate(avg=Count('date'))
+    result = Task.objects.filter(user=user.id, completion_status=1).annotate(
+            date=TruncDate('completion_datetime')).values("date").annotate(
+            count=Count('id')).order_by("date").aggregate(day_wise_tasks_completion_avg=Avg('count'))
 
     return result
 
@@ -170,10 +169,15 @@ def gen_report_max_completion_count_day_wise(user):
     """
     This method will return daywise count of completed tasks by any user
     """
-    result = Task.objects.filter(user=user.id, completion_status=1).values(
-        date=TruncDate('completion_datetime')).annotate(max=Max('date'))
 
-    return result
+    try:
+        result = Task.objects.filter(user=user.id, completion_status=1).annotate(
+            date=TruncDate('completion_datetime')).values("date").annotate(
+            count=Count('id')).order_by("date")[0]
+    except KeyError:
+        result = {}
+
+    return {"max_tasks_completion_date": result}
 
 
 def gen_report_max_created_count_day_wise(user):
@@ -182,18 +186,20 @@ def gen_report_max_created_count_day_wise(user):
     than other days
     """
     result = Task.objects.filter(user=user.id).annotate(
-        weekday=ExtractWeekDay('created_datetime')).values('weekday').annotate(
-        tasks_count=Count('weekday'))
+        weekday=ExtractWeekDay('created_datetime')).values("weekday").annotate(
+            count=Count('id')).order_by("weekday")
 
     day_abbr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
     dict_ = {}
+    for weekday in day_abbr:
+        dict_[weekday] = 0
 
     for item in result:
         day_name = day_abbr[item['weekday'] - 1]  # ExtractWeekDay method counts 1 as Sunday
-        dict_[day_name] = item['tasks_count']
+        dict_[day_name] = item['count']
 
-    return dict_
+    return {"day_wise_tasks_creation": dict_}
 
 
 # this dictionary contains reference to method related to specific report generation
