@@ -8,7 +8,6 @@ from django.core.paginator import Paginator, EmptyPage
 
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.response import Response
 
 from todofehrist.serializers import UserSerializer, UserLoginSerializer, \
     TaskSerializer, TaskMediaFilesSerializer, UserRestPasswordSerializer
@@ -205,7 +204,7 @@ class UserResetPasswordView(APIView, BaseAPIView):
         user = None
 
         try:
-            user = User.objects.get(email=request.data.get('email', ''))
+            user = User.objects.get(email=request.data.get('email', ''), is_oauth=0)
 
         except User.DoesNotExist:
             return self.response({}, "user", "Forgot Password", "Email Address doesn't exist.",
@@ -229,7 +228,7 @@ class UserResetPasswordView(APIView, BaseAPIView):
                                  status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=request.data.get('email', ''))
+            user = User.objects.get(email=request.data.get('email', ''), is_oauth=0)
 
         except User.DoesNotExist:
             return self.response({}, "user", "Reset Password", "Email Address doesn't exist.",
@@ -352,7 +351,8 @@ class TaskUpdateView(APIView, BaseAPIView):
         if not serializer_.is_valid():
             return self.response({}, "task", "Update Task", serializer_.errors, status.HTTP_400_BAD_REQUEST)
 
-        serializer_.update(task_, data_)
+        updated_obj = serializer_.update(task_, data_)
+        serializer_ = TaskSerializer(updated_obj)
 
         return self.response(serializer_.data, "task", "Update Task", None, status.HTTP_200_OK)
 
