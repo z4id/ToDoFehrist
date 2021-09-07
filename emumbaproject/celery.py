@@ -8,6 +8,9 @@
 """
 from __future__ import absolute_import, unicode_literals
 import os
+from datetime import date
+
+from django.db.models import Count
 
 # Celery imports
 from celery import Celery
@@ -52,14 +55,14 @@ def to_do_fehrist_tasks_reminder():
     list
     """
 
-    # TODO
-    # Update query to send emails to users who have tasks pending for today.
-    from todofehrist.models import Task
+    from todofehrist.models import Task, User
     from todofehrist.utility import send_email
 
-    result = Task.objects.filter(completion_status=1)
+    result = Task.objects.filter(
+        completion_status=0, completion_datetime__date=date.today()).values("user").annotate(
+        count=Count("user"))
 
-    for user_entry in result:
+    for user_tasks_entry in result:
         send_email("ToDoFehrist - Pending Tasks Reminder",
-                   f"You have {user_entry['count']} pending tasks due today.",
-                   user_entry["email"])
+                   f"You have {user_tasks_entry['count']} pending tasks due today.",
+                   User.objects.get(pk=user_tasks_entry["user"]).email)
