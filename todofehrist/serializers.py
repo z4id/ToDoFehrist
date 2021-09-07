@@ -122,5 +122,5 @@ class SocialAuthSerializer(serializers.Serializer):
     """
         serializer class for validating social oauth login view
     """
-    token = serializers.CharField(max_length=20000)
+    token = serializers.CharField()
     provider = serializers.CharField()

@@ -21,6 +21,8 @@ from todofehrist.models import Task, UserLogin
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
+from todofehrist.models_utility import get_datetime_now
+
 
 class BaseAPIView:
     """
@@ -108,6 +110,10 @@ def login_required(func_handler):
 
         try:
             user_login = UserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
+            if get_datetime_now() > user_login.expire_at:
+                return BaseAPIView().response({}, "Invalid Token", "Resource Request",
+                                              "Token Expired. Resource Access Not Allowed. Login To Continue..",
+                                              status.HTTP_401_UNAUTHORIZED)
             user = user_login.user
 
         except UserLogin.DoesNotExist:

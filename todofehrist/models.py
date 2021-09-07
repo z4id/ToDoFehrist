@@ -3,11 +3,13 @@
 """
 import os
 from enum import Enum
-import datetime
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
+from django.db.models import F
+
+from todofehrist.models_utility import get_datetime_now, get_expiry_datetime
 
 
 class UserSubscriptionTypesEnum(Enum):
@@ -23,9 +25,9 @@ class UserSubscriptionType(models.Model):
     """
         Custom Django Model for SubscriptionType of User.
     """
-    name = models.CharField(max_length=30, unique=True, null=False)
-    price = models.IntegerField(default=0, null=False)
-    currency = models.CharField(max_length=20, default='USD')
+    name = models.CharField(max_length=30, unique=True)
+    price = models.IntegerField()
+    currency = models.CharField(max_length=30)
 
 
 class UserManager(BaseUserManager):
@@ -85,7 +87,7 @@ class User(AbstractUser):
     subscription_type = models.ForeignKey(UserSubscriptionType, on_delete=models.CASCADE)
     is_email_verified = models.BooleanField(default=False)
     is_oauth = models.BooleanField(default=False)
-    updated_datetime = models.DateTimeField(null=True)
+    updated_datetime = models.DateTimeField(default=get_datetime_now)
 
     class Meta:
         """
@@ -100,18 +102,18 @@ class UserLogin(models.Model):
     """
         Custom Django Model for Login/Auth handling of AppUser.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False, unique=True)
-    token = models.CharField(max_length=256, null=False)
-    created_at = models.DateTimeField(default=datetime.datetime.utcnow())
-    expire_at = models.DateTimeField(null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.CharField(max_length=256)
+    created_at = models.DateTimeField(default=get_datetime_now)
+    expire_at = models.DateTimeField(default=get_expiry_datetime)
 
     def save(self, *args, **kwargs):
         """
         This method sets login/auth token's expiry datetime using created_at
         & and time margin to expire set in projects setting.py
         """
-        # self.expire_at = self.created_at
-        # self.expire_at = self.created_at + settings.LOGIN_TOKEN_EXPIRY_TIME.seconds
+        self.created_at = get_datetime_now()
+        self.expire_at = get_expiry_datetime()
         super(UserLogin, self).save(*args, **kwargs)
 
     class Meta:
@@ -158,8 +160,11 @@ class Task(models.Model):
     completion_status = models.BooleanField(default=False)
     completion_datetime = models.DateTimeField(null=True)
     files_count = models.IntegerField(default=0)
-    created_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
-    updated_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
+    created_datetime = models.DateTimeField(default=get_datetime_now)
+    updated_datetime = models.DateTimeField(default=get_datetime_now)
+
+    class Meta:
+        ordering = ['-pk']
 
     def save(self, *args, **kwargs):
 
@@ -167,11 +172,13 @@ class Task(models.Model):
             # New Task Object will be created
             can_be_updated = False
 
-            result = UserQuotaManagement.objects.get_or_create(user=self.user)
-            quota_obj = result[0]
-
             max_allowed_tasks = UserSubscriptionLimits.objects.get(
                 subscription_type=self.user.subscription_type).max_allowed_tasks
+
+            result = UserQuotaManagement.objects.get_or_create(user=self.user)
+            quota_obj = result[0]
+            # quota_obj.update(
+            # total_tasks=F("total_tasks")+1 if F("total_tasks") < max_allowed_tasks else F("total_tasks"))
 
             if quota_obj.total_tasks < max_allowed_tasks:
                 quota_obj.total_tasks += 1
@@ -187,16 +194,12 @@ class Task(models.Model):
         else:
             # Task object will partially updated
             kwargs.pop('update')
+            self.updated_datetime = get_datetime_now()
             super(Task, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
 
-        result = UserQuotaManagement.objects.get_or_create(user=self.user)
-        quota_obj = result[0]
-
-        quota_obj.total_tasks -= 1
-        quota_obj.save()
-
+        UserQuotaManagement.objects.filter(user=self.user).update(total_tasks=F('total_tasks')-1)
         super(Task, self).delete()
 
 
@@ -207,7 +210,7 @@ class TaskMediaFiles(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     file = models.FileField()
-    uploaded_datetime = models.DateTimeField(default=datetime.datetime.utcnow())
+    uploaded_datetime = models.DateTimeField(default=get_datetime_now)
     last_accessed_datetime = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
 
