@@ -79,7 +79,7 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.due_datetime = validated_data.get('due_datetime', instance.due_datetime)
         instance.completion_status = validated_data.get('completion_status',
                                                         instance.completion_status)
-        instance.save(update=True)
+        instance.update()
         return instance
 
     def get_files(self, instance):
