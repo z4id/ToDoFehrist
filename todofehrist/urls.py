@@ -13,35 +13,35 @@ from todofehrist.exceptions import HTTPStatusCodeHandler
 
 urlpatterns = [
     # User Registration
-    path('api/v1/register', UserView.as_view(), name='register'),
+    path(f'{settings.API_URL}/register', UserView.as_view(), name='register'),
 
     # Account Registration via Email Verification
-    path('v1/activate/<uid>/<token>', activate_account, name='activate'),  # Email Verification
+    path(f'{settings.API_VERSION}/activate/<uid>/<token>', activate_account, name='activate'),  # Email Verification
 
     # User Sign In
-    path('api/v1/auth', UserLoginView.as_view(), name='login'),
+    path(f'{settings.API_URL}/auth', UserLoginView.as_view(), name='login'),
 
     # User Log Out
-    path('api/v1/auth/logout', UserLogoutView.as_view(), name='logout'),
+    path(f'{settings.API_URL}/auth/logout', UserLogoutView.as_view(), name='logout'),
 
     # User Forgot & Reset Password Request
-    path('api/v1/auth/reset', UserResetPasswordView.as_view()),
+    path(f'{settings.API_URL}/auth/reset', UserResetPasswordView.as_view()),
 
-    path('api/v1/oauth', SocialAuthLogin.as_view()),
+    path(f'{settings.API_URL}/oauth', SocialAuthLogin.as_view()),
 
     # GET - Fetch All Users Tasks, POST - Create a New Task, GET ?search - Search Tasks with string
-    path('api/v1/tasks', TaskView.as_view()),
+    path(f'{settings.API_URL}/tasks', TaskView.as_view()),
     # GET - Fetch Task by ID, POST - Update Task by ID
-    path('api/v1/tasks/<task_id>', TaskUpdateView.as_view()),
+    path(f'{settings.API_URL}/tasks/<task_id>', TaskUpdateView.as_view()),
 
     # POST - Upload Task File
-    path('api/v1/tasks/<task_id>/files', TaskMediaFileView.as_view()),
+    path(f'{settings.API_URL}/tasks/<task_id>/files', TaskMediaFileView.as_view()),
 
     # DELETE - Remove Task File, GET - Download Task File
-    path('api/v1/tasks/<task_id>/files/<file_id>', TaskMediaFileView.as_view()),
+    path(f'{settings.API_URL}/tasks/<task_id>/files/<file_id>', TaskMediaFileView.as_view()),
 
     # GET ?name= - Generate Report by Name
-    path('api/v1/reports/', cache_page(settings.REPORT_CACHE_TIME)(ReportView.as_view())),
+    path(f'{settings.API_URL}/reports/', cache_page(settings.REPORT_CACHE_TIME)(ReportView.as_view())),
 ]
 
 # handler500 = HTTPStatusCodeHandler.handler500

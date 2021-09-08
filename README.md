@@ -37,14 +37,15 @@ EnvConfigurator is open source with a [public repository][todofehrist] on GitHub
 
 ## Installation & Usage
 
-ToDoFehrist requires [Python3](https://pypi.org/), Django3, DRF3 & Celery4 to run.
+ToDoFehrist requires [Python3.8](https://pypi.org/), Django3, DRF3 & Celery5 to run.
 
 ```sh
+source dev.env
 pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
-python manage.py test
 python manage.py loaddata fixture_2
+python manage.py test
 python manage.py runserver
 ```
 
@@ -72,7 +73,7 @@ docker volume inspect todofehrist_postgres_data
 
 Want to contribute? Great!
 
-Fork Gihub repository and create a Pull Request.
+Fork Github repository and create a Pull Request.
 
 Run tests before submitting the request
 ```sh

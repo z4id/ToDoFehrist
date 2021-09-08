@@ -137,4 +137,4 @@ env_todofehrist/
 # docker volume
 postgres_data/
 # static media files
-app/mediafiles/
+mediafiles/

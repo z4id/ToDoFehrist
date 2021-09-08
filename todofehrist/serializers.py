@@ -16,6 +16,13 @@ class UserSerializer(serializers.ModelSerializer):
     validators_ = [UniqueValidator(queryset=User.objects.all())]
     email = serializers.EmailField(required=True, validators=validators_)
 
+    class Meta:
+        """
+            Define model and attributes to use for serialization
+        """
+        model = User
+        fields = ('id', 'email', 'password')
+
     def create(self, validated_data):
         """
         created an User object after validating the data received in request
@@ -24,13 +31,6 @@ class UserSerializer(serializers.ModelSerializer):
                     email_address=validated_data['email'],
                     password=validated_data['password'])
         return user
-
-    class Meta:
-        """
-            Define model and attributes to use for serialization
-        """
-        model = User
-        fields = ('id', 'email', 'password')
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
@@ -64,8 +64,17 @@ class TaskSerializer(serializers.ModelSerializer):
 
     title = serializers.CharField()
     description = serializers.CharField()
-    due_datetime = serializers.DateTimeField(input_formats=settings.Serializer_DateTime_FORMATS)
+    due_datetime = serializers.DateTimeField(input_formats=settings.DATETIME_FORMATS)
     files = serializers.SerializerMethodField()
+
+    class Meta:
+        """
+            Define model and attributes to use for serialization
+        """
+        model = Task
+        fields = ('id', 'user', 'title', 'description', 'due_datetime',
+                  'completion_status', 'completion_datetime', 'files_count',
+                  'created_datetime', 'updated_datetime', 'files')
 
     def update(self, instance, validated_data):
         """
@@ -95,15 +104,6 @@ class TaskSerializer(serializers.ModelSerializer):
                     TaskMediaFiles.objects.filter(task=instance.id), many=True).data
         except AttributeError:
             return []
-
-    class Meta:
-        """
-            Define model and attributes to use for serialization
-        """
-        model = Task
-        fields = ('id', 'user', 'title', 'description', 'due_datetime',
-                  'completion_status', 'completion_datetime', 'files_count',
-                  'created_datetime', 'updated_datetime', 'files')
 
 
 class TaskMediaFilesSerializer(serializers.ModelSerializer):
