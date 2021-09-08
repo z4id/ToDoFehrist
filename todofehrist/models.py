@@ -107,6 +107,12 @@ class UserLogin(models.Model):
     created_at = models.DateTimeField(default=get_datetime_now)
     expire_at = models.DateTimeField(default=get_expiry_datetime)
 
+    class Meta:
+        """
+            Define Database Table Metadata
+        """
+        db_table = 'user_login'
+
     def save(self, *args, **kwargs):
         """
         This method sets login/auth token's expiry datetime using created_at
@@ -115,12 +121,6 @@ class UserLogin(models.Model):
         self.created_at = get_datetime_now()
         self.expire_at = get_expiry_datetime()
         super(UserLogin, self).save(*args, **kwargs)
-
-    class Meta:
-        """
-            Define Database Table Metadata
-        """
-        db_table = 'user_login'
 
 
 class UserQuotaManagement(models.Model):
@@ -171,20 +171,18 @@ class Task(models.Model):
         max_allowed_tasks = UserSubscriptionLimits.objects.get(
             subscription_type=self.user.subscription_type).max_allowed_tasks
 
-        try:
-            quota_obj = UserQuotaManagement.objects.get(user=self.user)
-
-            if quota_obj.total_tasks < max_allowed_tasks:
-                quota_obj.total_tasks += 1
-                quota_obj.save()
-
-                super(Task, self).save(*args, **kwargs)
-            else:
+        # Update the total tasks count for user
+        success = UserQuotaManagement.objects.filter(user=self.user, total_tasks__lt=max_allowed_tasks).update(
+            total_tasks=F("total_tasks")+1)
+        if success == 0:  # couldn't update or find
+            result = UserQuotaManagement.objects.get_or_create(user=self.user)
+            if result[1]:  # new object is created
+                result[0].total_tasks = 1
+                result[0].save()
+            else:  # object already exists and thus has  total_tasks >= max_allowed_tasks
                 raise ValueError("User Quota for Task Creation Reached.")
 
-        except UserQuotaManagement.DoesNotExist:
-            UserQuotaManagement(user=self.user, total_tasks=1).save()
-            super(Task, self).save(*args, **kwargs)
+        super(Task, self).save(*args, **kwargs)
 
     def update(self, *args, **kwargs):
         self.updated_datetime = get_datetime_now()

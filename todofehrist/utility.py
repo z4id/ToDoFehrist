@@ -11,10 +11,11 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.db.models.functions import ExtractWeekDay, TruncDate
-from django.db.models import Count, Avg, Max
+from django.db.models import Count, Avg
 
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 
 from todofehrist.models import Task, UserLogin
 
@@ -24,29 +25,70 @@ from google.auth.transport import requests
 from todofehrist.models_utility import get_datetime_now
 
 
-class BaseAPIView:
+class BaseAPIView(APIView):
     """
     Create Generic Response Payload object
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
-    def response(self, data, data_type, description, error, status_code, page_data=None):
+    @classmethod
+    def __base_response(cls, *args, **kwargs):
         """
-            Create Response payload with given params and return Django Response
+            data=None, entity='', description="", error=None, page_data=None
         """
+        error = kwargs.get("error")
+        description = kwargs.get("description")
+        entity = kwargs.get("entity")
+        data = kwargs.get("data")
+        page_data = kwargs.get("page_data")
         response_data = {"success": False if error else True,
                          "payload": {},
                          "errors": error,
                          "description": description}
-        response_data["payload"][data_type] = data
+        response_data["payload"][entity] = data
         if page_data:
             response_data["payload"]["total"] = page_data.get("total")
             response_data["payload"]["from"] = page_data.get("from")
             response_data["payload"]["to"] = page_data.get("to")
 
-        return Response(response_data, status=status_code)
+        return response_data
+
+    @classmethod
+    def response_success(cls, *args, **kwargs):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        return Response(cls.__base_response(*args, **kwargs), status=status.HTTP_200_OK)
+
+    @classmethod
+    def response_unauthorized(cls, *args, **kwargs):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        return Response(cls.__base_response(*args, **kwargs), status=status.HTTP_401_UNAUTHORIZED)
+
+    @classmethod
+    def response_invalid(cls, *args, **kwargs):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        return Response(cls.__base_response(*args, **kwargs), status=status.HTTP_400_BAD_REQUEST)
+
+    @classmethod
+    def response_not_found(cls, *args, **kwargs):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        return Response(cls.__base_response(*args, **kwargs), status=status.HTTP_404_NOT_FOUND)
+
+    @classmethod
+    def response_internal_error(cls, *args, **kwargs):
+        """
+            Create Response payload with given params and return Django Response
+        """
+        return Response(cls.__base_response(*args, **kwargs), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def send_email(subject, body, to_):
@@ -111,15 +153,15 @@ def login_required(func_handler):
         try:
             user_login = UserLogin.objects.get(token=request.META.get('HTTP_AUTHORIZATION', ''))
             if get_datetime_now() > user_login.expire_at:
-                return BaseAPIView().response({}, "Invalid Token", "Resource Request",
-                                              "Token Expired. Resource Access Not Allowed. Login To Continue..",
-                                              status.HTTP_401_UNAUTHORIZED)
+                return BaseAPIView.response_unauthorized(entity="Invalid Token",
+                                                         description="Resource Request",
+                                                         error="Token Expired. "
+                                                               "Resource Access Not Allowed. Login To Continue..")
             user = user_login.user
 
         except UserLogin.DoesNotExist:
-            return BaseAPIView().response({}, "Invalid Token", "Resource Request",
-                                          "Resource Access Not Allowed. Login To Continue..",
-                                          status.HTTP_401_UNAUTHORIZED)
+            return BaseAPIView.response_unauthorized(entity="Invalid Token", description="Resource Request",
+                                                     error="Resource Access Not Allowed. Login To Continue..")
 
         return func_handler(self, request, user, *args, **kwargs)
 
@@ -173,7 +215,7 @@ def gen_report_max_completion_count_day_wise(user):
     try:
         result = Task.objects.filter(user=user.id, completion_status=1).annotate(
             date=TruncDate('completion_datetime')).values("date").annotate(
-            count=Count('id')).order_by("date")[0]
+            count=Count('id')).order_by("date").first()
     except KeyError:
         result = {}
 

@@ -100,7 +100,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
-INSTALLED_APPS.extend(MY_APPS)
+INSTALLED_APPS = INSTALLED_APPS + MY_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -209,4 +209,7 @@ BROKER_URL = env_parser.BROKER_URL
 
 GOOGLE_OAUTH_CLIENT_ID = env_parser.GOOGLE_OAUTH_CLIENT_ID
 
-Serializer_DateTime_FORMATS = ['%Y-%m-%dT%H:%M:%S.%fZ']
+DATETIME_FORMATS = ['%Y-%m-%dT%H:%M:%S.%fZ']
+
+API_VERSION = "v1"
+API_URL = f"api/{API_VERSION}"
