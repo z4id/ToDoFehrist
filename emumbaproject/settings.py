@@ -65,7 +65,7 @@ LOGGING = {
         "app": {
             "format": (
                 "%(asctime)s [%(levelname)-8s] "
-                "(%(module)s.%(funcName)s) %(message)s"
+                "(%(filename)s.%(funcName)s):%(lineno)s %(message)s"
             ),
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },

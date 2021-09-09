@@ -7,6 +7,8 @@
     invoked at 12 AM everyday (UTC Standard)
 """
 from __future__ import absolute_import, unicode_literals
+
+import logging
 import os
 from datetime import date
 
@@ -63,6 +65,9 @@ def to_do_fehrist_tasks_reminder():
         count=Count("user"))
 
     for user_tasks_entry in result:
+        email_address = User.objects.get(pk=user_tasks_entry["user"]).email
         send_email("ToDoFehrist - Pending Tasks Reminder",
                    f"You have {user_tasks_entry['count']} pending tasks due today.",
-                   User.objects.get(pk=user_tasks_entry["user"]).email)
+                   email_address)
+
+        logging.debug(f"Reminder Email sent to user with email address {email_address}")
