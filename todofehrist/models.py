@@ -175,10 +175,10 @@ class Task(models.Model):
         success = UserQuotaManagement.objects.filter(user=self.user, total_tasks__lt=max_allowed_tasks).update(
             total_tasks=F("total_tasks")+1)
         if success == 0:  # couldn't update or find
-            result = UserQuotaManagement.objects.get_or_create(user=self.user)
-            if result[1]:  # new object is created
-                result[0].total_tasks = 1
-                result[0].save()
+            query_obj, success = UserQuotaManagement.objects.get_or_create(user=self.user)
+            if success:  # new object is created
+                query_obj.total_tasks = 1
+                query_obj.save()
             else:  # object already exists and thus has  total_tasks >= max_allowed_tasks
                 raise ValueError("User Quota for Task Creation Reached.")
 
