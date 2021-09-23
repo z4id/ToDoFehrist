@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: deployment
+metadata:
+  name: todofehristapi-deployment
+spec:
+  selector:
+    matchLabels:
+      app: todofehristapi
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: todofehristapi
+    spec:
+      containers:
+      - name: todofehristapi
+        image: z4id/todofehrist:v1
