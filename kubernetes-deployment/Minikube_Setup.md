@@ -37,7 +37,7 @@ kubectl version --client
 ```
 # Make sure you are in root directory 'ToDoFehrist'
 docker build -t todofehrist:v1 .
-docker --login  # Login for dockerhub.io
+docker login  # Login for dockerhub.io
 docker push todofehrist:v1
 ```
 
@@ -85,16 +85,30 @@ PGDATABASE=$(kubectl get secrets -n postgres-operator "${PG_CLUSTER_USER_SECRET_
 
 psql -h localhost -p 5432 -U hippo
 # use PGPASSWORD for authentication
+#Show Databases
+\l
+# Connect to Database
+\c hippo
+# Show Tables
+\dt
 
 kubectl get pods -n postgres-operator
+```
+
+## Create Env ConfigMap
+```
+kubectl -n postgres-operator create configmap todofehristapi-dev-env-cm --from-env-file=dev.env
+kubectl -n postgres-operator get configmap todofehristapi-dev-env-cm -o yaml
+# OR update the existing
+kubectl -n postgres-operator apply -f todofehristapi-dev-env-cm.yaml
 ```
 
 ## ToDoFehristAPI Deployment - Service - Ingress
 ```
 # Create APIs Deployment - Service and Ingress
-kubectl apply -f todofehristapi-deployment.yaml
-kubectl apply -f todofehristapi-service.yaml
-kubectl apply -f todofehrist-ingress.yaml
+kubectl -n postgres-operator apply -f todofehristapi-deployment.yaml
+kubectl -n postgres-operator apply -f todofehristapi-service.yaml
+kubectl -n postgres-operator apply -f todofehrist-ingress.yaml
 
 # Get Minikube Cluster IP
 minikube ip
@@ -116,11 +130,13 @@ minikube tunnel
 # to test a service locally in minikube
 minikube service todofehristapi-service --url
 
-kubectl get namespaces
-kubectl get pods  # to get deployments
-kubectl get services
-kubectl get ingress
+kubectl -n postgres-operator get namespaces
+kubectl -n postgres-operator get pods  # to get deployments
+kubectl -n postgres-operator get services
+kubectl -n postgres-operator get ingress
 
 # forward port from a pod
 kubectl -n default port-forward "<POD_NAME>" 8000:8000
+# Restart a deployment
+kubectl -n postgres-operator rollout restart deployment todofehristapi-deployment
 ```

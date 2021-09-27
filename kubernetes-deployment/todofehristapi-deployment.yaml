@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: deployment
+kind: Deployment
 metadata:
   name: todofehristapi-deployment
 spec:
@@ -14,4 +14,20 @@ spec:
     spec:
       containers:
       - name: todofehristapi
-        image: z4id/todofehrist:v1
+        image: z4id/todofehrist:v2
+        env:
+          - name: DB_VENDOR
+            value: "postgres"
+          - name: DB_HOST
+            valueFrom: { secretKeyRef: { name: hippo-pguser-hippo, key: host } }
+          - name: DB_PORT
+            valueFrom: { secretKeyRef: { name: hippo-pguser-hippo, key: port } }
+          - name: DB_NAME
+            valueFrom: { secretKeyRef: { name: hippo-pguser-hippo, key: dbname } }
+          - name: DB_USER
+            valueFrom: { secretKeyRef: { name: hippo-pguser-hippo, key: user } }
+          - name: DB_PASSWORD
+            valueFrom: { secretKeyRef: { name: hippo-pguser-hippo, key: password } }
+        envFrom:
+          - configMapRef:
+              name: todofehristapi-dev-env-cm
