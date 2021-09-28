@@ -75,6 +75,7 @@ kubectl -n postgres-operator describe postgresclusters.postgres-operator.crunchy
 # In a new terminal, create a port forward:
 
 PG_CLUSTER_PRIMARY_POD=$(kubectl get pod -n postgres-operator -o name -l postgres-operator.crunchydata.com/cluster=hippo,postgres-operator.crunchydata.com/role=master)
+sudo systemctl stop postgresql  # if its running locally on port 5432
 kubectl -n postgres-operator port-forward "${PG_CLUSTER_PRIMARY_POD}" 5432:5432
 
 # Return back to previous terminal session
@@ -108,7 +109,10 @@ kubectl -n postgres-operator apply -f todofehristapi-dev-env-cm.yaml
 # Create APIs Deployment - Service and Ingress
 kubectl -n postgres-operator apply -f todofehristapi-deployment.yaml
 kubectl -n postgres-operator apply -f todofehristapi-service.yaml
+# for minikube cluster
 kubectl -n postgres-operator apply -f todofehrist-ingress.yaml
+# for GKE cluster
+kubectl -n postgres-operator apply -f todofehrist-ingress-gke.yaml
 
 # Get Minikube Cluster IP
 minikube ip
@@ -139,4 +143,22 @@ kubectl -n postgres-operator get ingress
 kubectl -n default port-forward "<POD_NAME>" 8000:8000
 # Restart a deployment
 kubectl -n postgres-operator rollout restart deployment todofehristapi-deployment
+```
+
+# GKE (Google Kubernetes Engine)
+```
+# GKE (Google Kubernetes Engine Deployment)
+# 1: Create GKE Cluster with default configurations (name it 'gke-cluster')
+# 2: Connect with local kubectl
+gcloud container clusters get-credentials gke-cluster --zone us-central1-c --project emumba
+# 3: See Available Nodes
+kubectl get node
+# See default project
+gcloud config set project emumba
+
+# after ingress deployment
+gcloud compute forwarding-rules list \
+  --filter description~todofehrist-ingress-gke \
+  --format \
+  "table[box](name,IPAddress,target.segment(-2):label=TARGET_TYPE)"
 ```
