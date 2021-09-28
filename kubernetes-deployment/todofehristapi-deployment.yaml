@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: todofehristapi
-        image: z4id/todofehrist:v2
+        image: z4id/todofehrist:v3
         env:
           - name: DB_VENDOR
             value: "postgres"

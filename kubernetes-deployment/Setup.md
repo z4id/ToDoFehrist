@@ -1,4 +1,4 @@
-# Minikube Setup
+# Kubernetes Setup
 
 ## Tech Stack
 - Ubuntu 21.04
@@ -161,4 +161,17 @@ gcloud compute forwarding-rules list \
   --filter description~todofehrist-ingress-gke \
   --format \
   "table[box](name,IPAddress,target.segment(-2):label=TARGET_TYPE)"
+  
+# For GCP/GKE/GCE ingress working, make sure you have '/' url handler in application 
+# which return 200 HTTP status code for health/readinessProbe.
+# OR
+# in deployment file ads this section in container definition
+container:
+  readinessProbe:
+    httpGet:
+      path: /login
+      port: 8080 # Must be same as containerPort
+      httpHeaders:
+      - name: Host
+        value: yourdomain.com
 ```

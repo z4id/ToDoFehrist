@@ -20,6 +20,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+from emumbaproject.views import RootView
+
 # OpenAPI/Swagger based REST API Doc
 SchemaView = get_schema_view(
     openapi.Info(
@@ -34,6 +36,7 @@ SchemaView = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+
 urlpatterns = [
 
     # Swagger API Doc Generator Routes
@@ -44,6 +47,7 @@ urlpatterns = [
     path('redoc/', SchemaView.with_ui('redoc', cache_timeout=0),
          name='schema-redoc'),
 
+    path('', RootView.as_view()),
     path('admin/', admin.site.urls),
     path(f'{settings.API_URL}/', include('todofehrist.urls')),
 ]
