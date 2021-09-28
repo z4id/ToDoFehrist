@@ -81,6 +81,8 @@ python manage.py test
 pylint --load-plugins pylint_django $(git ls-files '*.py')
 ```
 
+##  [Kubernetes Deployment](./kubernetes-deployment/Setup.md)
+
 ## License
 
 MIT
